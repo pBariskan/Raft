@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Superpowers Brainstorming</title>
+  <style>
+    /*
+     * BRAINSTORM COMPANION FRAME TEMPLATE
+     *
+     * This template provides a consistent frame with:
+     * - OS-aware light/dark theming
+     * - Header branding and connection status
+     * - Scrollable main content area
+     * - CSS helpers for common UI patterns
+     *
+     * Content is injected via placeholder comment in #frame-content.
+     */
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --bg-primary: #f5f5f7;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e5e5e7;
+      --border: #d1d1d6;
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-tertiary: #aeaeb2;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --success: #34c759;
+      --warning: #ff9f0a;
+      --error: #ff3b30;
+      --selected-bg: #e8f4fd;
+      --selected-border: #0071e3;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1d1d1f;
+        --bg-secondary: #2d2d2f;
+        --bg-tertiary: #3d3d3f;
+        --border: #424245;
+        --text-primary: #f5f5f7;
+        --text-secondary: #86868b;
+        --text-tertiary: #636366;
+        --accent: #0a84ff;
+        --accent-hover: #409cff;
+        --selected-bg: rgba(10, 132, 255, 0.15);
+        --selected-border: #0a84ff;
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* ===== FRAME STRUCTURE ===== */
+    .brand { display: flex; align-items: center; min-width: 0; overflow: hidden; color: var(--text-secondary); line-height: 1; }
+    .brand a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; min-width: 0; max-width: 100%; line-height: 1; }
+    .brand-copy { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1; transform: translateY(-1px); }
+    .brand-logo { display: block; height: 1em; width: auto; max-width: 180px; flex-shrink: 0; filter: invert(1); }
+    @media (prefers-color-scheme: dark) {
+      .brand-logo { filter: none; }
+    }
+    .status { font-size: 0.7rem; color: var(--status-color, var(--success)); display: flex; align-items: center; gap: 0.4rem; justify-self: end; white-space: nowrap; line-height: 1; }
+    .status::before { content: ''; width: 6px; height: 6px; background: var(--status-color, var(--success)); border-radius: 50%; }
+
+    .main { flex: 1; overflow-y: auto; }
+    #frame-content { padding: 2rem; min-height: 100%; }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      min-height: 42px;
+    }
+    .header .brand { justify-self: start; width: 100%; font-size: 0.75rem; line-height: 1; }
+    .header .status { grid-column: 2; line-height: 1; }
+    .header span {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .header .selected-text {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .section { margin-bottom: 2rem; }
+    .label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+    /* ===== OPTIONS (for A/B/C choices) ===== */
+    .options { display: flex; flex-direction: column; gap: 0.75rem; }
+    .option {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .option:hover { border-color: var(--accent); }
+    .option.selected { background: var(--selected-bg); border-color: var(--selected-border); }
+    .option .letter {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      width: 1.75rem; height: 1.75rem;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .option.selected .letter { background: var(--accent); color: white; }
+    .option .content { flex: 1; }
+    .option .content h3 { font-size: 0.95rem; margin-bottom: 0.15rem; }
+    .option .content p { color: var(--text-secondary); font-size: 0.85rem; margin: 0; }
+
+    /* ===== CARDS (for showing designs/mockups) ===== */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card.selected { border-color: var(--selected-border); border-width: 2px; }
+    .card-image { background: var(--bg-tertiary); aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; }
+    .card-body { padding: 1rem; }
+    .card-body h3 { margin-bottom: 0.25rem; }
+    .card-body p { color: var(--text-secondary); font-size: 0.85rem; }
+
+    /* ===== MOCKUP CONTAINER ===== */
+    .mockup {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .mockup-header {
+      background: var(--bg-tertiary);
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .mockup-body { padding: 1.5rem; }
+
+    /* ===== SPLIT VIEW (side-by-side comparison) ===== */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 700px) { .split { grid-template-columns: 1fr; } }
+
+    /* ===== PROS/CONS ===== */
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .pros, .cons { background: var(--bg-secondary); border-radius: 8px; padding: 1rem; }
+    .pros h4 { color: var(--success); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .cons h4 { color: var(--error); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .pros ul, .cons ul { margin-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+    .pros li, .cons li { margin-bottom: 0.25rem; }
+
+    /* ===== PLACEHOLDER (for mockup areas) ===== */
+    .placeholder {
+      background: var(--bg-tertiary);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+
+    /* ===== INLINE MOCKUP ELEMENTS ===== */
+    .mock-nav { background: var(--accent); color: white; padding: 0.75rem 1rem; display: flex; gap: 1.5rem; font-size: 0.9rem; }
+    .mock-sidebar { background: var(--bg-tertiary); padding: 1rem; min-width: 180px; }
+    .mock-content { padding: 1.5rem; flex: 1; }
+    .mock-button { background: var(--accent); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+    .mock-input { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>Raft — site structure mockup (2026-10-24, rough visuals)</div>
+  </div>
+
+  <div class="main">
+    <div id="frame-content">
+      <h2>Bitmiş site: yukarıdan aşağı 6 bölüm</h2>
+<p class="subtitle">Tek uzun bir sayfa. Kalbi 2. bölümdeki canlı oyun alanı; diğer bölümler onu anlatıyor ve kanıtlıyor. Sitedeki metinler İngilizce (başvuru için, benim tahminim). Sayılar örnek, gerçek değil.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="hero">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Giriş</h3>
+      <p>Büyük başlık ve tek cümle, arkada yavaşça mesajlaşan 5 sunucu. Ziyaretçi 5 saniyede ne olduğunu anlar.</p>
+      <div class="mockup" style="margin-top:10px">
+        <div class="mockup-body" style="text-align:center;padding:28px 16px">
+          <div style="font-size:26px;font-weight:700">Five servers. One truth.</div>
+          <div style="color:var(--text-secondary);margin-top:6px">A Raft consensus cluster, written from scratch in Go, running live in your browser.</div>
+          <div style="margin-top:14px;display:flex;gap:8px;justify-content:center">
+            <span class="mock-button">Break it yourself ↓</span>
+            <span class="mock-button" style="opacity:.7">GitHub</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="playground">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Canlı oyun alanı (sitenin kalbi)</h3>
+      <p>Gerçek Raft kodu tarayıcıda çalışıyor. Sunucuyu öldür, ağı ikiye böl, mesajları kaybettir; liderin değişmesini ve kayıtların kopyalanmasını izle. Yavaşlat, duraklat, adım adım ilerlet.</p>
+
+      <div class="mockup" style="margin-top:10px">
+        <div class="mockup-header">Playground</div>
+        <div class="mockup-body" style="display:flex;gap:14px;flex-wrap:wrap">
+
+          <svg viewBox="0 0 400 270" style="flex:1 1 320px;min-width:280px;max-width:460px">
+            <g stroke="var(--border)" stroke-width="1" opacity=".6">
+              <line x1="200" y1="40" x2="295" y2="109"/><line x1="200" y1="40" x2="259" y2="221"/>
+              <line x1="200" y1="40" x2="141" y2="221"/><line x1="200" y1="40" x2="105" y2="109"/>
+            </g>
+            <g fill="var(--accent)">
+              <circle r="5"><animateMotion dur="1.4s" repeatCount="indefinite" path="M200,40 L295,109"/></circle>
+              <circle r="5"><animateMotion dur="1.4s" repeatCount="indefinite" path="M200,40 L259,221"/></circle>
+              <circle r="5"><animateMotion dur="1.4s" repeatCount="indefinite" path="M200,40 L105,109"/></circle>
+            </g>
+            <circle r="5" fill="var(--error)"><animateMotion dur="1.4s" repeatCount="indefinite" path="M200,40 L160,160"/><animate attributeName="opacity" values="1;1;0" dur="1.4s" repeatCount="indefinite"/></circle>
+
+            <g font-size="11" text-anchor="middle" fill="var(--text-primary)">
+              <circle cx="200" cy="40" r="26" fill="var(--selected-bg)" stroke="var(--accent)" stroke-width="3"/>
+              <text x="200" y="38" font-weight="700">S1</text><text x="200" y="51" font-size="9">leader · t3</text>
+
+              <circle cx="295" cy="109" r="26" fill="var(--bg-secondary)" stroke="var(--border)" stroke-width="2"/>
+              <text x="295" y="107" font-weight="700">S2</text><text x="295" y="120" font-size="9">follower</text>
+
+              <circle cx="259" cy="221" r="26" fill="var(--bg-secondary)" stroke="var(--border)" stroke-width="2"/>
+              <text x="259" y="219" font-weight="700">S3</text><text x="259" y="232" font-size="9">follower</text>
+
+              <circle cx="141" cy="221" r="26" fill="var(--bg-tertiary)" stroke="var(--error)" stroke-width="2" stroke-dasharray="4 3"/>
+              <text x="141" y="219" font-weight="700" fill="var(--text-secondary)">S4 ✕</text><text x="141" y="232" font-size="9" fill="var(--error)">down</text>
+
+              <circle cx="105" cy="109" r="26" fill="var(--bg-secondary)" stroke="var(--border)" stroke-width="2"/>
+              <text x="105" y="107" font-weight="700">S5</text><text x="105" y="120" font-size="9">follower</text>
+            </g>
+            <text x="200" y="262" font-size="10" text-anchor="middle" fill="var(--text-secondary)">mavi nokta = kalp atışı · kırmızı = kaybolan mesaj</text>
+          </svg>
+
+          <div style="flex:1 1 200px;display:flex;flex-direction:column;gap:8px;font-size:13px">
+            <div class="label">Bozmak için</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span class="mock-button">Kill S1 (lider)</span>
+              <span class="mock-button">Ağı böl</span>
+              <span class="mock-button">Revive S4</span>
+            </div>
+            <div>Mesaj kaybı: <b>%10</b> <span style="display:inline-block;width:90px;height:4px;background:var(--border);vertical-align:middle;border-radius:2px"><span style="display:block;width:20%;height:4px;background:var(--accent);border-radius:2px"></span></span></div>
+            <div>Hız: <b>0.25×</b> · <span class="mock-button" style="padding:2px 8px">⏸</span> <span class="mock-button" style="padding:2px 8px">Adım ▶</span></div>
+            <div class="label" style="margin-top:6px">İstemci</div>
+            <div style="display:flex;gap:6px"><input class="mock-input" value="PUT x 5" style="flex:1"><span class="mock-button">Gönder</span></div>
+            <div style="color:var(--success)">✓ x = 5 kesinleşti (4/5 sunucuda)</div>
+          </div>
+        </div>
+
+        <div class="mockup-body" style="display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid var(--border);font-size:12px">
+          <div style="flex:1 1 260px">
+            <div class="label">Her sunucunun kaydı (log) — dolu kutu = kesinleşti</div>
+            <div style="font-family:ui-monospace,monospace;line-height:1.9">
+              S1 <span style="background:var(--accent);color:#fff;padding:1px 5px">1</span> <span style="background:var(--accent);color:#fff;padding:1px 5px">1</span> <span style="background:var(--accent);color:#fff;padding:1px 5px">3</span> <span style="border:1px solid var(--accent);padding:0 5px">3</span><br>
+              S2 <span style="background:var(--accent);color:#fff;padding:1px 5px">1</span> <span style="background:var(--accent);color:#fff;padding:1px 5px">1</span> <span style="background:var(--accent);color:#fff;padding:1px 5px">3</span> <span style="border:1px solid var(--accent);padding:0 5px">3</span><br>
+              S3 <span style="background:var(--accent);color:#fff;padding:1px 5px">1</span> <span style="background:var(--accent);color:#fff;padding:1px 5px">1</span> <span style="background:var(--accent);color:#fff;padding:1px 5px">3</span><br>
+              S4 <span style="background:var(--text-tertiary);color:#fff;padding:1px 5px">1</span> <span style="color:var(--text-secondary)">← geride kaldı</span><br>
+              S5 <span style="background:var(--accent);color:#fff;padding:1px 5px">1</span> <span style="background:var(--accent);color:#fff;padding:1px 5px">1</span> <span style="background:var(--accent);color:#fff;padding:1px 5px">3</span> <span style="border:1px solid var(--accent);padding:0 5px">3</span>
+            </div>
+          </div>
+          <div style="flex:1 1 220px">
+            <div class="label">Olay akışı</div>
+            <div style="font-family:ui-monospace,monospace;line-height:1.7;color:var(--text-secondary)">
+              t2 · S2'nin kalp atışı kesildi<br>
+              t3 · S1 aday oldu, 4/5 oy aldı → lider<br>
+              t3 · S4 kapandı<br>
+              t3 · PUT x 5 → 4/5 onay → kesinleşti
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="scenarios">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Rehberli senaryolar</h3>
+      <p>Raft'ı bilmeyen birine adım adım anlatan kısa hikâyeler. Her biri oyun alanında oynar, her adımda bir cümle açıklama çıkar. "Görsel olarak anlatma" kısmı burası.</p>
+      <div class="cards" style="margin-top:10px">
+        <div class="card"><div class="card-body"><h3>Lider çökerse</h3><p>Kalp atışı kesilir, seçim başlar, yeni lider gelir.</p></div></div>
+        <div class="card"><div class="card-body"><h3>Ağ ikiye bölünürse</h3><p>Azınlık tarafı neden yazamaz? Çoğunluk kuralı.</p></div></div>
+        <div class="card"><div class="card-body"><h3>Eski lider geri dönerse</h3><p>Kendini hâlâ lider sanır; dönem numarası onu durdurur.</p></div></div>
+        <div class="card"><div class="card-body"><h3>Mesajlar kaybolursa</h3><p>Tekrar denemeler; hiçbir kesinleşmiş kayıt kaybolmaz.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="chaos">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Kaos testleri: "Kırmaya çalıştım"</h3>
+      <p>Binlerce rastgele felaket senaryosu ve her birinden sonra "veri tutarlı mı?" kontrolü. Artı: testlerin yakaladığı gerçek hataların kısa hikâyesi. Mühendisleri en çok etkileyen kısım muhtemelen bu.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <div class="mockup" style="flex:1;min-width:140px"><div class="mockup-body" style="text-align:center"><div style="font-size:24px;font-weight:700">10.000</div><div style="color:var(--text-secondary);font-size:12px">rastgele senaryo (örnek)</div></div></div>
+        <div class="mockup" style="flex:1;min-width:140px"><div class="mockup-body" style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--success)">0</div><div style="color:var(--text-secondary);font-size:12px">tutarlılık hatası</div></div></div>
+        <div class="mockup" style="flex:2;min-width:220px"><div class="mockup-body" style="font-size:12px"><b>Bug #2:</b> ağ bölünmesi + yeniden başlatma aynı anda olunca eski lider bir kaydı ezdi. Test 3.412. senaryoda yakaladı, düzeltmesi şu commit.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="architecture">
+    <div class="letter">5</div>
+    <div class="content">
+      <h3>Nasıl kuruldu</h3>
+      <p>Katmanları gösteren bir diyagram. Vurgu: aynı Raft kodu hem gerçek ağda (bilgisayarında ayrı süreçler) hem tarayıcıda simüle ağda çalışıyor.</p>
+      <div class="mockup" style="margin-top:10px"><div class="mockup-body" style="font-size:12px">
+        <div style="display:grid;grid-template-columns:1fr;gap:6px;max-width:420px;margin:0 auto;text-align:center">
+          <div class="placeholder" style="padding:8px">İstemci: PUT / GET</div>
+          <div class="placeholder" style="padding:8px">Veritabanı (key-value durum makinesi)</div>
+          <div class="placeholder" style="padding:8px;border-color:var(--accent)"><b>Raft çekirdeği</b> — lider seçimi, kayıt kopyalama</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div class="placeholder" style="padding:8px">Ağ: gerçek TCP <i>ya da</i> simüle</div>
+            <div class="placeholder" style="padding:8px">Disk: kayıt dosyası (WAL)</div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="writeup">
+    <div class="letter">6</div>
+    <div class="content">
+      <h3>Ölçümler ve yazı</h3>
+      <p>Gerçek modda 3 ve 5 sunuculu kümenin hız ölçümleri (saniyede kaç yazma, gecikme). Altında "Raft'ı yazarken öğrendiklerim" yazısı ve GitHub linki. Mülakatta konuşacağın her şey burada özetli.</p>
+    </div>
+  </div>
+
+</div>
+
+    </div>
+  </div>
+
+</body>
+</html>
