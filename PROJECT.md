@@ -207,7 +207,7 @@ or commit.
 
 Each milestone ends green (tests pass) and committed.
 
-- [ ] **M0 — Setup.** Go module, folder layout, `go test ./...` in GitHub Actions, `.gitignore`,
+- [x] **M0 — Setup.** Go module, folder layout, `go test ./...` in GitHub Actions, `.gitignore`,
       empty `docs/bugs.md` and `docs/learning/`.
 - [ ] **M1 — Simulator + leader election.** Deterministic sim (clock, network, seeded RNG);
       election with randomized timeouts and terms; tests: one leader emerges, re-election after

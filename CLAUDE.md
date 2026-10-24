@@ -19,8 +19,8 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 ## Where things stand
 
-Set up on 2026-10-24: only `PROJECT.md`, this file and the mockup exist; no code yet. Next step:
-M0, then M1. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
+2026-10-24: M0 done (Go module, package skeletons, CI, `docs/bugs.md`, `docs/learning/`). Next
+step: M1 (simulator + leader election). For each milestone, write its plan in `docs/plans/` first, then build. Keep this
 section current in a line or two as milestones land.
 
 ## Working rules
@@ -63,3 +63,4 @@ Poyraz's global preferences, copied here because cloud sessions don't see their 
 Add commands here as they come to exist (tests, chaos runner, local cluster, WASM build, site).
 
 - `go test ./...` — all tests (from M0 on).
+- `gofmt -l . && go vet ./... && go test -race ./...` — what CI runs (`.github/workflows/test.yml`).
