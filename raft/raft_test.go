@@ -205,7 +205,8 @@ func TestHigherTermVoteRequestTurnsLeaderIntoFollowerAndGetsVote(t *testing.T) {
 	n.Step(Message{Type: MsgVoteResp, From: 2, To: 1, Term: 1})
 	n.Step(Message{Type: MsgVoteResp, From: 3, To: 1, Term: 1})
 	n.Ready()
-	n.Step(Message{Type: MsgVote, From: 4, To: 1, Term: 5})
+	// The leader's log holds its term-1 no-op, so the candidate's log must be at least that long.
+	n.Step(Message{Type: MsgVote, From: 4, To: 1, Term: 5, Index: 1, LogTerm: 1})
 	s := n.Status()
 	if s.State != StateFollower || s.Term != 5 || s.Vote != 4 || s.Lead != None {
 		t.Fatalf("got %+v, want follower in term 5 that voted for 4", s)

@@ -1,6 +1,7 @@
 package sim
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand/v2"
 	"sort"
@@ -46,8 +47,9 @@ type envelope struct {
 }
 
 type node struct {
-	rn *raft.Node
-	up bool
+	rn      *raft.Node
+	up      bool
+	applied []raft.Entry // committed entries this node has handed out, in order
 }
 
 // Cluster is a deterministic simulation of a Raft cluster: a virtual clock counted in ticks, a
@@ -67,8 +69,9 @@ type Cluster struct {
 	group    map[raft.NodeID]int // partition group per node; nil means fully connected
 	dropRate float64
 
-	leaderOf map[uint64]raft.NodeID // every leader ever seen, per term
-	err      error                  // first safety violation
+	leaderOf  map[uint64]raft.NodeID // every leader ever seen, per term
+	committed []raft.Entry           // committed[i] is the entry first committed at index i+1
+	err       error                  // first safety violation
 }
 
 // New builds a cluster of followers in term 0.
@@ -140,6 +143,21 @@ func (c *Cluster) Tick() {
 			c.after(id)
 		}
 	}
+	if c.now%100 == 0 {
+		c.CheckLogs()
+	}
+}
+
+// Propose hands a command to a node, as a client would. Only a running leader accepts it.
+func (c *Cluster) Propose(id raft.NodeID, data []byte) error {
+	if !c.nodes[id].up {
+		return fmt.Errorf("sim: node %d is down", id)
+	}
+	if err := c.nodes[id].rn.Propose(data); err != nil {
+		return err
+	}
+	c.after(id)
+	return nil
 }
 
 // Run advances n ticks.
@@ -162,11 +180,16 @@ func (c *Cluster) RunUntil(cond func() bool, maxTicks int) bool {
 
 // after collects a node's outgoing messages and checks safety once it has acted.
 func (c *Cluster) after(id raft.NodeID) {
-	rn := c.nodes[id].rn
-	for _, m := range rn.Ready().Messages {
+	n := c.nodes[id]
+	rd := n.rn.Ready()
+	for _, m := range rd.Messages {
 		c.send(m)
 	}
-	c.checkElectionSafety(rn.Status())
+	for _, e := range rd.CommittedEntries {
+		c.checkCommitted(id, e)
+		n.applied = append(n.applied, e)
+	}
+	c.checkElectionSafety(id)
 }
 
 func (c *Cluster) send(m raft.Message) {
@@ -181,18 +204,88 @@ func (c *Cluster) send(m raft.Message) {
 	c.inflight = append(c.inflight, envelope{msg: m, deliverAt: c.now + delay, seq: c.seq})
 }
 
-// checkElectionSafety enforces the paper's Election Safety property: at most one leader per term,
-// over the whole run.
-func (c *Cluster) checkElectionSafety(s raft.Status) {
-	if s.State != raft.StateLeader || c.err != nil {
+func (c *Cluster) fail(format string, args ...any) {
+	if c.err == nil {
+		c.err = fmt.Errorf("tick %d (seed %d): "+format, append([]any{c.now, c.cfg.Seed}, args...)...)
+	}
+}
+
+// checkElectionSafety enforces Election Safety (at most one leader per term, over the whole run)
+// and Leader Completeness (a new leader holds every entry committed so far).
+func (c *Cluster) checkElectionSafety(id raft.NodeID) {
+	s := c.nodes[id].rn.Status()
+	if s.State != raft.StateLeader {
 		return
 	}
-	if prev, ok := c.leaderOf[s.Term]; ok && prev != s.ID {
-		c.err = fmt.Errorf("election safety violated at tick %d (seed %d): term %d has two leaders, %d and %d",
-			c.now, c.cfg.Seed, s.Term, prev, s.ID)
+	prev, seen := c.leaderOf[s.Term]
+	if seen && prev != s.ID {
+		c.fail("election safety violated: term %d has two leaders, %d and %d", s.Term, prev, s.ID)
+		return
+	}
+	if seen {
 		return
 	}
 	c.leaderOf[s.Term] = s.ID
+	log := c.nodes[id].rn.Log()
+	for _, e := range c.committed {
+		if e.Index > uint64(len(log)) || !sameEntry(log[e.Index-1], e) {
+			c.fail("leader completeness violated: node %d leads term %d without committed entry %d", id, s.Term, e.Index)
+			return
+		}
+	}
+}
+
+// checkCommitted enforces State Machine Safety: every node commits the same entry at each index,
+// and hands out committed entries in order with no gaps.
+func (c *Cluster) checkCommitted(id raft.NodeID, e raft.Entry) {
+	if want := uint64(len(c.nodes[id].applied)) + 1; e.Index != want {
+		c.fail("node %d delivered committed entry %d, expected %d", id, e.Index, want)
+		return
+	}
+	if e.Index <= uint64(len(c.committed)) {
+		if first := c.committed[e.Index-1]; !sameEntry(first, e) {
+			c.fail("state machine safety violated: node %d committed %s at index %d, but %s was committed there before",
+				id, describe(e), e.Index, describe(first))
+		}
+		return
+	}
+	c.committed = append(c.committed, e)
+}
+
+// CheckLogs enforces Log Matching: if two logs hold an entry with the same index and term, the
+// logs are identical up to that index. It runs every 100 ticks; call it at the end of a run too.
+func (c *Cluster) CheckLogs() {
+	logs := make([][]raft.Entry, len(c.ids))
+	for i, id := range c.ids {
+		logs[i] = c.nodes[id].rn.Log()
+	}
+	for i := range logs {
+		for j := i + 1; j < len(logs); j++ {
+			a, b := logs[i], logs[j]
+			k := min(len(a), len(b))
+			for k > 0 && a[k-1].Term != b[k-1].Term {
+				k--
+			}
+			for x := 0; x < k; x++ {
+				if !sameEntry(a[x], b[x]) {
+					c.fail("log matching violated: nodes %d and %d agree at index %d (term %d) but differ at index %d",
+						c.ids[i], c.ids[j], k, a[k-1].Term, x+1)
+					return
+				}
+			}
+		}
+	}
+}
+
+func sameEntry(a, b raft.Entry) bool {
+	return a.Index == b.Index && a.Term == b.Term && bytes.Equal(a.Data, b.Data)
+}
+
+func describe(e raft.Entry) string {
+	if e.Data == nil {
+		return fmt.Sprintf("(term %d, no-op)", e.Term)
+	}
+	return fmt.Sprintf("(term %d, %q)", e.Term, e.Data)
 }
 
 func (c *Cluster) connected(a, b raft.NodeID) bool {
@@ -239,6 +332,14 @@ func (c *Cluster) Statuses() []raft.Status {
 		out = append(out, c.Status(id))
 	}
 	return out
+}
+
+// Log returns a copy of one node's log.
+func (c *Cluster) Log(id raft.NodeID) []raft.Entry { return c.nodes[id].rn.Log() }
+
+// Applied returns the committed entries a node has handed out so far, in order.
+func (c *Cluster) Applied(id raft.NodeID) []raft.Entry {
+	return append([]raft.Entry(nil), c.nodes[id].applied...)
 }
 
 // StableLeader returns a running leader that a majority of the cluster follows: the leader and

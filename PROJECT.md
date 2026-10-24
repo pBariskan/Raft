@@ -212,7 +212,7 @@ Each milestone ends green (tests pass) and committed.
 - [x] **M1 — Simulator + leader election.** Deterministic sim (clock, network, seeded RNG);
       election with randomized timeouts and terms; tests: one leader emerges, re-election after
       leader crash, no two leaders in a term. Learning note 01.
-- [ ] **M2 — Log replication + commit rule.** AppendEntries, consistency check, conflict
+- [x] **M2 — Log replication + commit rule.** AppendEntries, consistency check, conflict
       resolution, commit only entries from the current term by majority. Learning note 02.
 - [ ] **M3 — Persistence + crash recovery.** Persist term/vote/log before replying; simulated disk
       that drops unsynced writes on crash; restart recovery. Learning note 03.

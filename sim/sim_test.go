@@ -160,10 +160,11 @@ func TestSameSeedSameRun(t *testing.T) {
 	}
 }
 
-// TestChaosElectionSafety throws random crashes, restarts, partitions and message loss at the
-// cluster and checks after every step that no term ever has two leaders. At the end it heals
-// everything and checks that a leader is elected again.
-func TestChaosElectionSafety(t *testing.T) {
+// TestChaosSafety throws random crashes, restarts, partitions and message loss at the cluster
+// while clients keep proposing, and checks after every step that no term has two leaders, no two
+// nodes commit different entries at an index, and every new leader holds all committed entries.
+// At the end it heals everything and checks that the cluster elects a leader and commits again.
+func TestChaosSafety(t *testing.T) {
 	seeds := make([]uint64, 0, 300)
 	if *replaySeed != 0 {
 		seeds = append(seeds, *replaySeed)
@@ -176,11 +177,19 @@ func TestChaosElectionSafety(t *testing.T) {
 			seeds = append(seeds, s)
 		}
 	}
+	totalCommitted := 0
 	for _, seed := range seeds {
 		c := New(Config{Seed: seed, Nodes: 5})
 		chaos := rand.New(rand.NewPCG(seed, 0xc4a05))
 		ids := []raft.NodeID{1, 2, 3, 4, 5}
+		proposed := 0
 		for i := 0; i < 3000 && c.Err() == nil; i++ {
+			if chaos.IntN(10) == 0 {
+				// A client sends a command to whichever server it believes leads; most go nowhere.
+				if c.Propose(ids[chaos.IntN(5)], []byte(fmt.Sprint("v", proposed))) == nil {
+					proposed++
+				}
+			}
 			switch r := chaos.IntN(1000); {
 			case r < 4:
 				c.Crash(ids[chaos.IntN(5)])
@@ -214,6 +223,37 @@ func TestChaosElectionSafety(t *testing.T) {
 		if !c.RunUntil(func() bool { _, ok := c.StableLeader(); return ok }, settle) {
 			t.Fatalf("seed %d: no leader after healing; statuses %v\nreplay: go test ./sim -run %s -sim.seed=%d", seed, c.Statuses(), t.Name(), seed)
 		}
+		// Like a real client, retry until the value is committed: an uncommitted entry can be
+		// wiped out when a node that spent the partition running elections comes back with a
+		// higher term and forces a new election.
+		hasFinal := func() bool {
+			for _, id := range ids {
+				v := values(c.Applied(id))
+				if len(v) == 0 || v[len(v)-1] != "final" {
+					return false
+				}
+			}
+			return true
+		}
+		for try := 0; try < 10 && !hasFinal(); try++ {
+			if !c.RunUntil(func() bool { _, ok := c.StableLeader(); return ok }, settle) {
+				break
+			}
+			l, _ := c.StableLeader()
+			if err := c.Propose(l, []byte("final")); err != nil {
+				t.Fatalf("seed %d: %v", seed, err)
+			}
+			c.RunUntil(hasFinal, 100)
+		}
+		if !hasFinal() {
+			t.Fatalf("seed %d: the final value was not committed everywhere after healing\nreplay: go test ./sim -run %s -sim.seed=%d", seed, t.Name(), seed)
+		}
+		c.CheckLogs()
 		checkSafe(t, c)
+		totalCommitted += len(values(c.Applied(ids[0])))
 	}
+	if len(seeds) > 1 && totalCommitted < len(seeds) {
+		t.Fatalf("only %d values committed over %d seeds: the chaos run is not exercising replication", totalCommitted, len(seeds))
+	}
+	t.Logf("%d seeds, %d client values committed, no safety violations", len(seeds), totalCommitted)
 }
