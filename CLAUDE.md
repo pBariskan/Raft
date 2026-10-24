@@ -10,8 +10,9 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 ## Talking to Poyraz
 
-- Reply in the language Poyraz writes in (usually Turkish). Code, comments, docs, commit messages
-  and site text are in English.
+- Lessons are in English (Poyraz's request, 2026-10-24): topic explanations, check questions and
+  the learning page. Short chat can follow the language Poyraz writes in. Code, comments, docs,
+  commit messages and site text are in English.
 - Learning comes first: follow "How we work" in `PROJECT.md` for every milestone (explain before,
   test-first, learning note after, check understanding before moving on).
 - Poyraz wants to learn **how the system works, not the code**. Explain behaviour (servers,
@@ -21,7 +22,7 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 2026-10-24: M0 and M1 done (leader election in `raft/`, deterministic simulator in `sim/`, learning
 note 01). Next step: M2 (log replication + commit rule). Visual explanations for Poyraz live on a
-separate learning page ("Raft Atölyesi" artifact), not in this repo. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
+separate learning page ("Raft Workshop" artifact), not in this repo. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
 section current in a line or two as milestones land.
 
 ## Working rules

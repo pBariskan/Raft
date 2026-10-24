@@ -1,6 +1,7 @@
 # 01 — Leader election
 
-Milestone M1. Interactive version: the "Lider seçimi" section of the Raft Atölyesi learning page.
+Milestone M1. Interactive version: the "Leader election" and "Network partition, step by step" sections of the
+Raft Workshop learning page.
 
 ## The problem
 
@@ -41,10 +42,16 @@ Winning needs 3 votes out of 5. Two winners in the same term would need 6 votes,
 - **Split vote.** Two candidates time out together and split the votes; nobody reaches 3. Their
   timers are re-randomized, so the next round almost always has a single early candidate. Without
   randomness the cluster can split forever (try it on the learning page).
-- **Network partition.** The side with 3 servers elects a new leader in a higher term. The side with
-  2 servers can never reach 3 votes, so it never elects anyone; its followers keep starting
-  elections and their term keeps climbing. The old leader on that side still thinks it leads, but
-  it cannot reach a majority. On healing, the higher term wins (`TestMinorityPartitionCannotElect`).
+- **Network partition, old leader on the small side.** The old leader still thinks it leads and its
+  one follower still hears its heartbeats, so the small side stays quiet. The 3-server side hears
+  nothing, times out and elects a new leader in a higher term. The old leader cannot reach a
+  majority, so (from M2 on) it cannot commit anything. On healing, the higher term wins and the old
+  leader steps down (`TestMinorityPartitionCannotElect`).
+- **Network partition, old leader on the big side.** The leader keeps its majority and nothing
+  changes there. The 2 servers on the small side hear nothing, keep starting elections and their
+  term keeps climbing, but 2 votes never win. On healing, their high term forces the real leader to
+  step down and a fresh election follows: safe, but a needless hiccup (pre-vote, a stretch goal,
+  prevents it).
 - **Too many failures.** With 3 of 5 servers down no leader can be elected at all
   (`TestMajorityNeededToElect`). Raft chooses to stop rather than risk two leaders. A 5-server
   cluster tolerates 2 failures; a 3-server cluster tolerates 1.
