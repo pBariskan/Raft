@@ -13,8 +13,9 @@ start at the first unticked milestone and tick items as they land. The agreed si
 - Lessons are in English (Poyraz's request, 2026-10-24): topic explanations, check questions and
   the learning page. Short chat can follow the language Poyraz writes in. Code, comments, docs,
   commit messages and site text are in English.
-- Learning comes first: follow "How we work" in `PROJECT.md` for every milestone (explain before,
-  test-first, learning note after, check understanding before moving on).
+- Since 2026-10-24 (15:05) Poyraz wants the whole project built first, then learns from the site's
+  Course. Don't stop per milestone for lessons or check questions; still test-first and still write
+  learning notes (they feed the Course). Plan: `docs/plans/full-build.md`.
 - Poyraz wants to learn **how the system works, not the code**. Explain behaviour (servers,
   messages, failures, why a rule exists), never walk through Go line by line, no Go tutorials.
 

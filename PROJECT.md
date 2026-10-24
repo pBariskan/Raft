@@ -136,6 +136,16 @@ checked for linearizability with Porcupine (`github.com/anishathalye/porcupine`)
 
 ## The website
 
+**Changed by Poyraz on 2026-10-24 (15:05):** the site now has two main areas, a **Workplace**
+(simulation screen: run any scenario with any intervention) and a **Course** (step-by-step lessons
+that build on each other, strong visuals, multiple-choice questions). Poyraz learns the project from
+the Course, after the whole project is built. The design must not look AI-generated. Plan and
+checklist: `docs/plans/full-build.md`. The six sections below map onto it: Hero → Landing,
+Playground + Guided scenarios → Workplace (presets), the teaching role → Course, Chaos testing +
+How it's built + Benchmarks → "Under the hood".
+
+Original structure, kept for reference:
+
 Agreed structure (mockup: `docs/mockups/site-sections.html`; Poyraz liked the structure, the
 visual design in the mockup is rough and should be improved):
 
@@ -164,6 +174,11 @@ The site must be usable on a phone (reviewers often open links on mobile), and t
 make sense to someone who has never heard of Raft.
 
 ## How we work (learning-first vibe coding)
+
+**Changed on 2026-10-24 (15:05):** Poyraz asked to build the whole project first and learn it from
+the Course afterwards. The per-milestone loop below (explain before, check questions after) is
+paused; learning notes are still written per milestone because they feed the Course.
+
 
 Claude writes the code. Poyraz said explicitly: **don't explain the code; teach how the system
 works.** So explanations are about behaviour, never line-by-line Go: what each server does, which
