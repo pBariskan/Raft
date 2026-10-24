@@ -209,7 +209,7 @@ Each milestone ends green (tests pass) and committed.
 
 - [x] **M0 — Setup.** Go module, folder layout, `go test ./...` in GitHub Actions, `.gitignore`,
       empty `docs/bugs.md` and `docs/learning/`.
-- [ ] **M1 — Simulator + leader election.** Deterministic sim (clock, network, seeded RNG);
+- [x] **M1 — Simulator + leader election.** Deterministic sim (clock, network, seeded RNG);
       election with randomized timeouts and terms; tests: one leader emerges, re-election after
       leader crash, no two leaders in a term. Learning note 01.
 - [ ] **M2 — Log replication + commit rule.** AppendEntries, consistency check, conflict

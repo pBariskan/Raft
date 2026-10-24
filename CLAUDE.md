@@ -19,8 +19,9 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 ## Where things stand
 
-2026-10-24: M0 done (Go module, package skeletons, CI, `docs/bugs.md`, `docs/learning/`). Next
-step: M1 (simulator + leader election). For each milestone, write its plan in `docs/plans/` first, then build. Keep this
+2026-10-24: M0 and M1 done (leader election in `raft/`, deterministic simulator in `sim/`, learning
+note 01). Next step: M2 (log replication + commit rule). Visual explanations for Poyraz live on a
+separate learning page ("Raft Atölyesi" artifact), not in this repo. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
 section current in a line or two as milestones land.
 
 ## Working rules
@@ -64,3 +65,5 @@ Add commands here as they come to exist (tests, chaos runner, local cluster, WAS
 
 - `go test ./...` — all tests (from M0 on).
 - `gofmt -l . && go vet ./... && go test -race ./...` — what CI runs (`.github/workflows/test.yml`).
+- `go test ./sim -run TestChaosElectionSafety -sim.seed=N` — replay one chaos seed.
+- `go test -short ./...` — quicker run (fewer chaos seeds).
