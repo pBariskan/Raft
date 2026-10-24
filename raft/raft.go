@@ -109,6 +109,20 @@ type Config struct {
 	HeartbeatTick int
 
 	Rand Rand
+
+	// HardState and Entries restore a node from storage after a restart. Leave them empty for a
+	// brand-new node.
+	HardState HardState
+	Entries   []Entry
+}
+
+// HardState is the part of a node's state that must be on stable storage before the node sends
+// any message that depends on it: its term, its vote in that term, and how far it knows the log
+// is committed.
+type HardState struct {
+	Term   uint64
+	Vote   NodeID
+	Commit uint64
 }
 
 func (c Config) validate() error {
@@ -131,6 +145,16 @@ func (c Config) validate() error {
 	if !seen[c.ID] {
 		return fmt.Errorf("raft: peer list does not contain own ID %d", c.ID)
 	}
+	prevTerm := uint64(0)
+	for i, e := range c.Entries {
+		if e.Index != uint64(i+1) || e.Term < prevTerm || e.Term > c.HardState.Term {
+			return fmt.Errorf("raft: restored entry %d (index %d, term %d) is out of place", i, e.Index, e.Term)
+		}
+		prevTerm = e.Term
+	}
+	if c.HardState.Commit > uint64(len(c.Entries)) {
+		return fmt.Errorf("raft: restored commit %d is past the log (%d entries)", c.HardState.Commit, len(c.Entries))
+	}
 	return nil
 }
 
@@ -145,10 +169,20 @@ type Status struct {
 	LastIndex uint64 // index of the last entry in the log
 }
 
-// Ready is what the node wants the outside world to do after a Tick, Step or Propose.
+// Ready is what the node wants the outside world to do after a Tick, Step or Propose. The caller
+// must handle it in this order:
+//
+//  1. Write HardState (if not nil) and Entries to stable storage, and sync. Entries replace
+//     everything in storage from Entries[0].Index on.
+//  2. Send Messages. They may promise things (a vote, "I have your entries") that are only true
+//     once step 1 is durable.
+//  3. Apply CommittedEntries to the state machine.
 type Ready struct {
-	Messages []Message
+	HardState *HardState
+	Entries   []Entry
+	Messages  []Message
 	// CommittedEntries are newly committed entries, in log order, each delivered exactly once.
+	// After a restart they are delivered again from index 1, so the state machine can be rebuilt.
 	CommittedEntries []Entry
 }
 
@@ -166,9 +200,11 @@ type Node struct {
 
 	votes map[NodeID]bool // granted votes received in the current election
 
-	log     []Entry // log[i] has Index i+1
-	commit  uint64
-	applied uint64 // highest index handed out in Ready.CommittedEntries
+	log      []Entry // log[i] has Index i+1
+	commit   uint64
+	applied  uint64    // highest index handed out in Ready.CommittedEntries
+	unstable uint64    // first index not yet handed out in Ready.Entries
+	prevHS   HardState // hard state as last handed out in Ready
 
 	// Leader only: for each follower, the next index to send and the highest index known to match.
 	next  map[NodeID]uint64
@@ -194,8 +230,14 @@ func New(c Config) (*Node, error) {
 		rand:          c.Rand,
 		electionTick:  c.ElectionTick,
 		heartbeatTick: c.HeartbeatTick,
+		term:          c.HardState.Term,
+		vote:          c.HardState.Vote,
+		commit:        c.HardState.Commit,
+		log:           append([]Entry(nil), c.Entries...),
+		prevHS:        c.HardState,
 	}
-	n.becomeFollower(0, None)
+	n.unstable = n.lastIndex() + 1
+	n.becomeFollower(n.term, None) // same term: keeps the restored vote
 	return n, nil
 }
 
@@ -212,6 +254,14 @@ func (n *Node) Log() []Entry { return append([]Entry(nil), n.log...) }
 func (n *Node) Ready() Ready {
 	rd := Ready{Messages: n.msgs}
 	n.msgs = nil
+	if hs := (HardState{Term: n.term, Vote: n.vote, Commit: n.commit}); hs != n.prevHS {
+		rd.HardState = &hs
+		n.prevHS = hs
+	}
+	if n.unstable <= n.lastIndex() {
+		rd.Entries = append([]Entry(nil), n.log[n.unstable-1:]...)
+	}
+	n.unstable = n.lastIndex() + 1
 	if n.commit > n.applied {
 		rd.CommittedEntries = append([]Entry(nil), n.log[n.applied:n.commit]...)
 		n.applied = n.commit
@@ -329,6 +379,7 @@ func (n *Node) handleAppend(m Message) {
 			}
 			n.log = n.log[:e.Index-1]
 		}
+		n.unstable = min(n.unstable, e.Index)
 		n.log = append(n.log, m.Entries[i:]...)
 		break
 	}

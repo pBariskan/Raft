@@ -22,7 +22,7 @@ The design must not look AI-generated.
 ## Engine steps
 
 - [x] M0 setup, M1 election, M2 replication + commit rule.
-- [ ] M3 persistence: `Ready` carries hard state (term, vote) and entries to persist; nodes restart
+- [x] M3 persistence: `Ready` carries hard state (term, vote) and entries to persist; nodes restart
       from storage; the simulated disk loses unsynced writes on a crash; messages are sent only
       after persisting. Tests: restart keeps vote, no double vote after restart, crash before sync.
 - [ ] M4 key-value store: PUT/GET/DELETE through the log, client sessions (client id + sequence

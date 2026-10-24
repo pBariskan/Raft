@@ -47,16 +47,33 @@ type envelope struct {
 }
 
 type node struct {
-	rn      *raft.Node
-	up      bool
-	applied []raft.Entry // committed entries this node has handed out, in order
+	rn       *raft.Node
+	up       bool
+	applied  []raft.Entry // committed entries handed out since the last (re)start, in order
+	disk     disk
+	restarts uint64
+}
+
+// disk is a node's simulated stable storage. It survives crashes; everything else is lost.
+type disk struct {
+	hs  raft.HardState
+	log []raft.Entry
+}
+
+func (d *disk) save(hs *raft.HardState, entries []raft.Entry) {
+	if hs != nil {
+		d.hs = *hs
+	}
+	if len(entries) > 0 {
+		d.log = append(d.log[:entries[0].Index-1], entries...)
+	}
 }
 
 // Cluster is a deterministic simulation of a Raft cluster: a virtual clock counted in ticks, a
 // network that delays, drops and partitions messages, and nodes that crash and restart.
 //
-// Until persistence exists (M3), Restart resumes a crashed node with its memory intact, as if it
-// had been paused rather than rebooted.
+// A crash wipes a node's memory. Restart boots a fresh node from what it saved to its simulated
+// disk, as a real server would.
 type Cluster struct {
 	cfg   Config
 	net   *rand.Rand
@@ -88,19 +105,30 @@ func New(cfg Config) *Cluster {
 		c.ids = append(c.ids, raft.NodeID(i))
 	}
 	for _, id := range c.ids {
-		rn, err := raft.New(raft.Config{
-			ID:            id,
-			Peers:         c.ids,
-			ElectionTick:  cfg.ElectionTick,
-			HeartbeatTick: cfg.HeartbeatTick,
-			Rand:          rand.New(rand.NewPCG(cfg.Seed, uint64(id))),
-		})
-		if err != nil {
-			panic(err) // the simulator builds the config itself; an error is a bug here
-		}
-		c.nodes[id] = &node{rn: rn, up: true}
+		n := &node{}
+		c.nodes[id] = n
+		c.boot(id)
 	}
 	return c
+}
+
+// boot starts a node from its disk with an empty memory.
+func (c *Cluster) boot(id raft.NodeID) {
+	n := c.nodes[id]
+	rn, err := raft.New(raft.Config{
+		ID:            id,
+		Peers:         c.ids,
+		ElectionTick:  c.cfg.ElectionTick,
+		HeartbeatTick: c.cfg.HeartbeatTick,
+		Rand:          rand.New(rand.NewPCG(c.cfg.Seed, uint64(id)<<32|n.restarts)),
+		HardState:     n.disk.hs,
+		Entries:       n.disk.log,
+	})
+	if err != nil {
+		panic(err) // the simulator wrote this disk itself; an error is a bug here
+	}
+	n.rn, n.up, n.applied = rn, true, nil
+	c.after(id) // a restored node hands its committed entries out again
 }
 
 // Seed returns the seed this cluster was built from.
@@ -182,6 +210,7 @@ func (c *Cluster) RunUntil(cond func() bool, maxTicks int) bool {
 func (c *Cluster) after(id raft.NodeID) {
 	n := c.nodes[id]
 	rd := n.rn.Ready()
+	n.disk.save(rd.HardState, rd.Entries) // persist before anything is sent
 	for _, m := range rd.Messages {
 		c.send(m)
 	}
@@ -292,11 +321,19 @@ func (c *Cluster) connected(a, b raft.NodeID) bool {
 	return c.group == nil || c.group[a] == c.group[b]
 }
 
-// Crash stops a node: it no longer ticks, and messages sent to it are lost.
+// Crash stops a node: it no longer ticks, messages sent to it are lost, and everything it had not
+// saved to disk is gone.
 func (c *Cluster) Crash(id raft.NodeID) { c.nodes[id].up = false }
 
-// Restart resumes a crashed node (see the Cluster comment on what it remembers).
-func (c *Cluster) Restart(id raft.NodeID) { c.nodes[id].up = true }
+// Restart boots a crashed node from its disk. Restarting a running node does nothing.
+func (c *Cluster) Restart(id raft.NodeID) {
+	n := c.nodes[id]
+	if n.up {
+		return
+	}
+	n.restarts++
+	c.boot(id)
+}
 
 // IsUp reports whether a node is running.
 func (c *Cluster) IsUp(id raft.NodeID) bool { return c.nodes[id].up }
