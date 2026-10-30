@@ -3,7 +3,6 @@ package sim
 import (
 	"flag"
 	"fmt"
-	"math/rand/v2"
 	"testing"
 
 	"github.com/pBariskan/Raft/raft"
@@ -160,107 +159,29 @@ func TestSameSeedSameRun(t *testing.T) {
 	}
 }
 
-// TestChaosSafety throws random crashes, restarts, partitions and message loss at the cluster
-// while clients keep proposing, and checks after every step that no term has two leaders, no two
-// nodes commit different entries at an index, and every new leader holds all committed entries.
-// At the end it heals everything and checks that the cluster elects a leader and commits again.
+// TestChaosSafety runs the chaos scenarios (random crashes, reboots, partitions, message loss and
+// slow networks while clients keep sending requests) and requires every safety property, the
+// linearizability check and recovery after healing to hold on every seed.
 func TestChaosSafety(t *testing.T) {
-	seeds := make([]uint64, 0, 300)
+	var seeds []uint64
 	if *replaySeed != 0 {
 		seeds = append(seeds, *replaySeed)
 	} else {
 		n := uint64(300)
 		if testing.Short() {
-			n = 30
+			n = 40
 		}
 		for s := uint64(1); s <= n; s++ {
 			seeds = append(seeds, s)
 		}
 	}
-	totalCommitted, totalOps := 0, 0
+	requests := 0
 	for _, seed := range seeds {
-		c := New(Config{Seed: seed, Nodes: 5})
-		chaos := rand.New(rand.NewPCG(seed, 0xc4a05))
-		ids := []raft.NodeID{1, 2, 3, 4, 5}
-		w := NewWorkload(c, seed, 3, keys, 3)
-		proposed := 0
-		for i := 0; i < 3000 && c.Err() == nil; i++ {
-			if chaos.IntN(10) == 0 {
-				// A client sends a command to whichever server it believes leads; most go nowhere.
-				if c.Propose(ids[chaos.IntN(5)], []byte(fmt.Sprint("v", proposed))) == nil {
-					proposed++
-				}
-			}
-			switch r := chaos.IntN(1000); {
-			case r < 4:
-				c.Crash(ids[chaos.IntN(5)])
-			case r < 10:
-				c.Restart(ids[chaos.IntN(5)])
-			case r < 13:
-				perm := chaos.Perm(5)
-				cut := 1 + chaos.IntN(4)
-				var a, b []raft.NodeID
-				for k, p := range perm {
-					if k < cut {
-						a = append(a, ids[p])
-					} else {
-						b = append(b, ids[p])
-					}
-				}
-				c.Partition(a, b)
-			case r < 18:
-				c.Heal()
-			case r < 21:
-				c.SetDropRate(float64(chaos.IntN(4)) / 10)
-			}
-			w.Step()
-			c.Tick()
+		r := RunChaos(ChaosConfig{Seed: seed})
+		if r.Failed() {
+			t.Fatalf("%s\nreplay: go test ./sim -run %s -sim.seed=%d   (or: go run ./cmd/chaos -from %d -seeds 1 -v)", r, t.Name(), seed, seed)
 		}
-		checkSafe(t, c)
-		for _, id := range ids {
-			c.Restart(id)
-		}
-		c.Heal()
-		c.SetDropRate(0)
-		if !c.RunUntil(func() bool { _, ok := c.StableLeader(); return ok }, settle) {
-			t.Fatalf("seed %d: no leader after healing; statuses %v\nreplay: go test ./sim -run %s -sim.seed=%d", seed, c.Statuses(), t.Name(), seed)
-		}
-		// Like a real client, retry until the value is committed: an uncommitted entry can be
-		// wiped out when a node that spent the partition running elections comes back with a
-		// higher term and forces a new election.
-		hasFinal := func() bool {
-			for _, id := range ids {
-				v := values(c.Applied(id))
-				if len(v) == 0 || v[len(v)-1] != "final" {
-					return false
-				}
-			}
-			return true
-		}
-		for try := 0; try < 10 && !hasFinal(); try++ {
-			if !c.RunUntil(func() bool { _, ok := c.StableLeader(); return ok }, settle) {
-				break
-			}
-			l, _ := c.StableLeader()
-			if err := c.Propose(l, []byte("final")); err != nil {
-				t.Fatalf("seed %d: %v", seed, err)
-			}
-			c.RunUntil(hasFinal, 100)
-		}
-		if !hasFinal() {
-			t.Fatalf("seed %d: the final value was not committed everywhere after healing\nreplay: go test ./sim -run %s -sim.seed=%d", seed, t.Name(), seed)
-		}
-		if !c.RunUntil(w.Idle, 3*settle) {
-			t.Fatalf("seed %d: clients still waiting after healing\nreplay: go test ./sim -run %s -sim.seed=%d", seed, t.Name(), seed)
-		}
-		c.CheckLogs()
-		checkSafe(t, c)
-		checkLinearizable(t, c)
-		totalOps += len(c.History())
-		totalCommitted += len(values(c.Applied(ids[0])))
+		requests += r.Requests
 	}
-	if len(seeds) > 1 && totalCommitted < len(seeds) {
-		t.Fatalf("only %d values committed over %d seeds: the chaos run is not exercising replication", totalCommitted, len(seeds))
-	}
-	t.Logf("%d seeds, %d log entries committed, %d client requests checked for linearizability, no violations", len(seeds), totalCommitted, totalOps)
+	t.Logf("%d seeds, %d client requests, no violations", len(seeds), requests)
 }

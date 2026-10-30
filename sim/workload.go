@@ -6,7 +6,7 @@ import (
 	"github.com/pBariskan/Raft/kv"
 )
 
-// Workload drives a set of clients with random GET/PUT/DELETE requests on a few keys. Few keys
+// Workload drives a set of clients with random GET/PUT/APPEND/DELETE requests on a few keys. Few keys
 // means many requests touch the same key, which is where consistency bugs show.
 type Workload struct {
 	c       *Cluster
@@ -34,12 +34,14 @@ func (w *Workload) Step() {
 			continue
 		}
 		key := w.keys[w.rng.IntN(len(w.keys))]
-		switch r := w.rng.IntN(10); {
-		case r < 4:
+		w.next++
+		switch r := w.rng.IntN(20); {
+		case r < 8:
 			_ = w.c.Submit(id, kv.OpGet, key, "")
-		case r < 9:
-			w.next++
+		case r < 12:
 			_ = w.c.Submit(id, kv.OpPut, key, itoa(w.next))
+		case r < 19:
+			_ = w.c.Submit(id, kv.OpAppend, key, itoa(w.next)+".")
 		default:
 			_ = w.c.Submit(id, kv.OpDelete, key, "")
 		}

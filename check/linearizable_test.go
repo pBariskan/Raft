@@ -39,3 +39,17 @@ func TestHistories(t *testing.T) {
 		}
 	}
 }
+
+func TestAppendApplied(t *testing.T) {
+	app := func(c uint64, v string, call, ret int64) Operation {
+		return Operation{Client: c, Op: kv.OpAppend, Key: "x", Value: v, Call: call, Return: ret, Done: true}
+	}
+	ok := []Operation{app(1, "a", 0, 10), app(2, "b", 0, 10), get(3, "x", "ba", true, 20, 30)}
+	if History(ok, time.Second) != Linearizable {
+		t.Fatal("concurrent appends in either order should be allowed")
+	}
+	twice := []Operation{app(1, "a", 0, 10), get(3, "x", "aa", true, 20, 30)}
+	if History(twice, time.Second) != NotLinearizable {
+		t.Fatal("an append applied twice should be caught")
+	}
+}

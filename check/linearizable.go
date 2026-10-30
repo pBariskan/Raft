@@ -31,6 +31,8 @@ func (o Operation) String() string {
 		return fmt.Sprintf("client %d: PUT %s=%s [%d, %d]", o.Client, o.Key, o.Value, o.Call, o.Return)
 	case kv.OpDelete:
 		return fmt.Sprintf("client %d: DELETE %s [%d, %d]", o.Client, o.Key, o.Call, o.Return)
+	case kv.OpAppend:
+		return fmt.Sprintf("client %d: APPEND %s+=%s [%d, %d]", o.Client, o.Key, o.Value, o.Call, o.Return)
 	}
 	return fmt.Sprintf("client %d: GET %s -> %q (found %v) [%d, %d]", o.Client, o.Key, o.Output.Value, o.Output.Found, o.Call, o.Return)
 }
@@ -79,6 +81,8 @@ var model = porcupine.Model{
 			return true, keyState{value: in.Value, present: true}
 		case kv.OpDelete:
 			return true, keyState{}
+		case kv.OpAppend:
+			return true, keyState{value: st.value + in.Value, present: true}
 		}
 		out := output.(kv.Result)
 		return out.Found == st.present && (!st.present || out.Value == st.value), st

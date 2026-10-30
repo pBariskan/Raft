@@ -233,7 +233,7 @@ Each milestone ends green (tests pass) and committed.
       that drops unsynced writes on crash; restart recovery. Learning note 03.
 - [x] **M4 — Key-value store + client sessions.** PUT/GET/DELETE through the log, dedupe, client
       retries and leader redirect. Learning note 04.
-- [ ] **M5 — Chaos runner + linearizability.** Randomized fault schedules over many seeds,
+- [x] **M5 — Chaos runner + linearizability.** Randomized fault schedules over many seeds,
       invariant checks every step, Porcupine check per run, failing seed printed for replay; fixed
       seed set in CI; "classic mistakes" switches in the core, each caught by the checkers.
       Learning note 05.

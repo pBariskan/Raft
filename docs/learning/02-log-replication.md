@@ -63,18 +63,17 @@ entry). Every 100 ticks and at the end: **Log Matching**. The chaos test runs 30
 partitions and message loss while clients propose; the last run committed 13,005 client values with
 no violations.
 
-## What the tests caught, and what they didn't
+## What the tests caught
 
-To check the checkers, three classic mistakes were switched on by hand, one at a time:
+To check the checkers, classic mistakes can be switched on (see note 05). Two findings from M2/M5:
 
-| Mistake | Unit tests | 300-seed chaos run |
-| --- | --- | --- |
-| Vote without checking the candidate's log | caught | caught: "node 3 leads term 5 without committed entry 4" (seed 1) |
-| Commit old-term entries by counting copies (Figure 8) | caught | **not caught** |
-| Follower trusts the leader's commit index beyond what the message checked | caught | **not caught** |
-
-The chaos run doesn't yet create the rare timing these two need. M5 has to tune the fault schedule
-until it catches both; until then the unit tests are the safety net for them.
+- Counting old-term entries (Figure 8) is hidden by the no-op: every acknowledgement also covers
+  the new leader's no-op, so the bug never changes a commit decision. With the no-op removed, the
+  chaos runner catches it, but only on rare timings (4 of 6000 seeds).
+- A follower trusting the leader's commit index beyond what a message verified is harmless in this
+  implementation, because every AppendEntries carries the leader's whole missing suffix. It would
+  matter with empty heartbeats or size-limited batches. The unit test
+  `TestFollowerCommitIsCappedByWhatTheMessageVerified` keeps the rule in place anyway.
 
 ## Interview questions
 

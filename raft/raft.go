@@ -110,10 +110,28 @@ type Config struct {
 
 	Rand Rand
 
+	// Mistakes switches on well-known Raft bugs on purpose, to show that the tests catch them.
+	// Always zero in real use.
+	Mistakes Mistakes
+
 	// HardState and Entries restore a node from storage after a restart. Leave them empty for a
 	// brand-new node.
 	HardState HardState
 	Entries   []Entry
+}
+
+// Mistakes are classic Raft bugs that can be switched on deliberately (for the "I tried to break
+// it" demos). Each one breaks a rule from the Raft paper.
+type Mistakes struct {
+	// CommitOldTerms lets a leader commit an entry from an earlier term just because a majority
+	// stores it (Figure 8 of the paper). It also drops the new leader's no-op entry: with the no-op
+	// in place, every acknowledgement covers a current-term entry too, which hides this bug.
+	CommitOldTerms bool
+	// VoteIgnoresLog grants votes without checking that the candidate's log is up to date.
+	VoteIgnoresLog bool
+	// AcceptStaleLeader lets a follower take entries from a leader of an older term instead of
+	// rejecting them.
+	AcceptStaleLeader bool
 }
 
 // HardState is the part of a node's state that must be on stable storage before the node sends
@@ -192,6 +210,7 @@ type Node struct {
 	id    NodeID
 	peers []NodeID
 	rand  Rand
+	bugs  Mistakes
 
 	state StateType
 	term  uint64
@@ -228,6 +247,7 @@ func New(c Config) (*Node, error) {
 		id:            c.ID,
 		peers:         append([]NodeID(nil), c.Peers...),
 		rand:          c.Rand,
+		bugs:          c.Mistakes,
 		electionTick:  c.ElectionTick,
 		heartbeatTick: c.HeartbeatTick,
 		term:          c.HardState.Term,
@@ -317,6 +337,10 @@ func (n *Node) Step(m Message) {
 		case MsgVote:
 			n.send(Message{Type: MsgVoteResp, To: m.From, Reject: true})
 		case MsgApp:
+			if n.bugs.AcceptStaleLeader {
+				n.handleAppend(m)
+				return
+			}
 			n.send(Message{Type: MsgAppResp, To: m.From, Reject: true, Index: m.Index, Hint: n.lastIndex()})
 		}
 		return
@@ -338,7 +362,7 @@ func (n *Node) handleVote(m Message) {
 	// One vote per term. Granting again to the same candidate is safe (its request may have
 	// been retried or its first reply lost). And never vote for a candidate whose log is behind
 	// ours: it could be missing committed entries.
-	grant := (n.vote == None || n.vote == m.From) && n.logUpToDate(m.Index, m.LogTerm)
+	grant := (n.vote == None || n.vote == m.From) && (n.bugs.VoteIgnoresLog || n.logUpToDate(m.Index, m.LogTerm))
 	if grant {
 		n.vote = m.From
 		n.resetElectionTimer()
@@ -415,7 +439,7 @@ func (n *Node) handleAppendResp(m Message) {
 // the current term. Entries from earlier terms are committed only along with such an entry.
 func (n *Node) maybeCommit() {
 	for idx := n.lastIndex(); idx > n.commit; idx-- {
-		if n.termAt(idx) != n.term {
+		if n.termAt(idx) != n.term && !n.bugs.CommitOldTerms {
 			return // terms only decrease going back, so no earlier index qualifies either
 		}
 		copies := 1 // the leader's own
@@ -472,6 +496,10 @@ func (n *Node) becomeLeader() {
 	}
 	// A no-op from the new term: once it commits, every earlier entry is committed with it. It
 	// also goes out right away as the first heartbeat, before anyone else times out.
+	if n.bugs.CommitOldTerms {
+		n.broadcastAppend()
+		return
+	}
 	n.appendEntry(nil)
 }
 

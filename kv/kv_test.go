@@ -90,3 +90,18 @@ func TestOutOfOrderAppliesPanic(t *testing.T) {
 	}()
 	s.Apply(entry(2, Command{Client: 1, Seq: 1, Op: OpGet, Key: "x"}))
 }
+
+func TestAppendTwiceIsNotTheSameAsOnce(t *testing.T) {
+	s := NewStore()
+	app := Command{Client: 1, Seq: 1, Op: OpAppend, Key: "log", Value: "a."}
+	s.Apply(entry(1, app))
+	s.Apply(entry(2, app)) // the retry, committed again
+	if v, _ := s.Get("log"); v != "a." {
+		t.Fatalf("log = %q after a duplicate append, want a.", v)
+	}
+	s.AllowDuplicates = true
+	s.Apply(entry(3, app))
+	if v, _ := s.Get("log"); v != "a.a." {
+		t.Fatalf("with duplicate detection off, log = %q, want a.a.", v)
+	}
+}

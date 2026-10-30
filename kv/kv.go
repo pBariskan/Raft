@@ -20,6 +20,9 @@ const (
 	OpGet Op = iota
 	OpPut
 	OpDelete
+	// OpAppend adds Value to the end of the key's current value. Unlike PUT, doing it twice is
+	// not the same as doing it once, which is what makes duplicate detection visible.
+	OpAppend
 )
 
 func (o Op) String() string {
@@ -30,6 +33,8 @@ func (o Op) String() string {
 		return "PUT"
 	case OpDelete:
 		return "DELETE"
+	case OpAppend:
+		return "APPEND"
 	}
 	return fmt.Sprintf("Op(%d)", uint8(o))
 }
@@ -45,7 +50,7 @@ type Command struct {
 }
 
 func (c Command) String() string {
-	if c.Op == OpPut {
+	if c.Op == OpPut || c.Op == OpAppend {
 		return fmt.Sprintf("%s %s=%s (client %d #%d)", c.Op, c.Key, c.Value, c.Client, c.Seq)
 	}
 	return fmt.Sprintf("%s %s (client %d #%d)", c.Op, c.Key, c.Client, c.Seq)
@@ -69,7 +74,7 @@ func Decode(b []byte) (Command, error) {
 	return c, nil
 }
 
-// Result is what a client gets back. For GET, Value and Found; PUT and DELETE return nothing.
+// Result is what a client gets back. For GET, Value and Found; the writes return nothing.
 type Result struct {
 	Value string `json:"v,omitempty"`
 	Found bool   `json:"f,omitempty"`
@@ -94,6 +99,9 @@ type Store struct {
 	data     map[string]string
 	sessions map[uint64]session
 	applied  uint64
+
+	// AllowDuplicates switches off duplicate detection, a classic mistake kept for the demos.
+	AllowDuplicates bool
 }
 
 // NewStore returns an empty store.
@@ -120,7 +128,7 @@ func (s *Store) Apply(e raft.Entry) Applied {
 	// Duplicate detection: a retried request can be committed more than once (the first leader
 	// committed it but the client never heard back). Apply it only the first time.
 	ses := s.sessions[cmd.Client]
-	if cmd.Seq <= ses.lastSeq {
+	if cmd.Seq <= ses.lastSeq && !s.AllowDuplicates {
 		out.Duplicate = true
 		if cmd.Seq == ses.lastSeq {
 			out.Result = ses.lastResult
@@ -136,6 +144,8 @@ func (s *Store) Apply(e raft.Entry) Applied {
 		s.data[cmd.Key] = cmd.Value
 	case OpDelete:
 		delete(s.data, cmd.Key)
+	case OpAppend:
+		s.data[cmd.Key] += cmd.Value
 	}
 	s.sessions[cmd.Client] = session{lastSeq: cmd.Seq, lastResult: out.Result}
 	return out

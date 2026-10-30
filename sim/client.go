@@ -138,6 +138,11 @@ func (c *Cluster) serverReceived(req *request) {
 		reply(response{notLeader: true, hint: st.Lead})
 		return
 	}
+	if c.cfg.Mistakes.LocalReads && cmd.Op == kv.OpGet {
+		v, ok := n.store.Get(cmd.Key) // what this server believes, without asking anyone
+		reply(response{result: kv.Result{Value: v, Found: ok}})
+		return
+	}
 	if res, ok := n.store.Cached(cmd.Client, cmd.Seq); ok {
 		reply(response{result: res}) // a retry of something already applied
 		return

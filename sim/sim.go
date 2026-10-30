@@ -22,6 +22,21 @@ type Config struct {
 	MinDelay int     // minimum message delay in ticks (default 1)
 	MaxDelay int     // maximum message delay in ticks (default 3)
 	DropRate float64 // probability that any message is lost
+
+	Mistakes Mistakes // classic bugs switched on deliberately; zero for a correct cluster
+}
+
+// Mistakes are classic bugs that can be switched on to show that the checkers catch them: the
+// Raft-core ones, plus mistakes in how a server uses Raft.
+type Mistakes struct {
+	raft.Mistakes
+	// ForgetVote: a server doesn't save its vote to disk, so after a reboot it can vote again in
+	// the same term.
+	ForgetVote bool
+	// LocalReads: the leader answers GET from its own copy instead of going through the log.
+	LocalReads bool
+	// NoDedupe: servers apply a retried client request again instead of skipping it.
+	NoDedupe bool
 }
 
 func (c *Config) setDefaults() {
@@ -67,9 +82,12 @@ type disk struct {
 	log []raft.Entry
 }
 
-func (d *disk) save(hs *raft.HardState, entries []raft.Entry) {
+func (d *disk) save(hs *raft.HardState, entries []raft.Entry, forgetVote bool) {
 	if hs != nil {
 		d.hs = *hs
+		if forgetVote {
+			d.hs.Vote = raft.None
+		}
 	}
 	if len(entries) > 0 {
 		d.log = append(d.log[:entries[0].Index-1], entries...)
@@ -97,9 +115,13 @@ type Cluster struct {
 	history    []check.Operation
 	duplicates int
 
+	halted bool // a node panicked; the run is over
+
 	leaderOf  map[uint64]raft.NodeID // every leader ever seen, per term
 	committed []raft.Entry           // committed[i] is the entry first committed at index i+1
 	err       error                  // first safety violation
+	errKind   string                 // which property it broke
+	errTick   int
 }
 
 // New builds a cluster of followers in term 0.
@@ -134,12 +156,14 @@ func (c *Cluster) boot(id raft.NodeID) {
 		Rand:          rand.New(rand.NewPCG(c.cfg.Seed, uint64(id)<<32|n.restarts)),
 		HardState:     n.disk.hs,
 		Entries:       n.disk.log,
+		Mistakes:      c.cfg.Mistakes.Mistakes,
 	})
 	if err != nil {
 		panic(err) // the simulator wrote this disk itself; an error is a bug here
 	}
 	n.rn, n.up, n.applied = rn, true, nil
 	n.store, n.waiting = kv.NewStore(), map[reqKey]uint64{}
+	n.store.AllowDuplicates = c.cfg.Mistakes.NoDedupe
 	c.after(id) // a restored node hands its committed entries out again
 }
 
@@ -152,9 +176,26 @@ func (c *Cluster) Now() int { return c.now }
 // Err returns the first safety violation seen, or nil.
 func (c *Cluster) Err() error { return c.err }
 
+// ErrKind names the property the first violation broke ("" if none).
+func (c *Cluster) ErrKind() string { return c.errKind }
+
 // Tick advances virtual time by one tick: due messages are delivered in a fixed order, then
-// every running node's clock ticks.
+// every running node's clock ticks. If a node panics (only possible with a classic mistake
+// switched on, or a bug), the run is recorded as failed and stops.
 func (c *Cluster) Tick() {
+	if c.halted {
+		return
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			c.halted = true
+			c.fail("Internal consistency", "a node gave up: %v", r)
+		}
+	}()
+	c.tick()
+}
+
+func (c *Cluster) tick() {
 	c.now++
 	sort.Slice(c.inflight, func(i, j int) bool {
 		a, b := c.inflight[i], c.inflight[j]
@@ -227,7 +268,7 @@ func (c *Cluster) RunUntil(cond func() bool, maxTicks int) bool {
 func (c *Cluster) after(id raft.NodeID) {
 	n := c.nodes[id]
 	rd := n.rn.Ready()
-	n.disk.save(rd.HardState, rd.Entries) // persist before anything is sent
+	n.disk.save(rd.HardState, rd.Entries, c.cfg.Mistakes.ForgetVote) // persist before anything is sent
 	for _, m := range rd.Messages {
 		c.send(m)
 	}
@@ -251,8 +292,9 @@ func (c *Cluster) send(m raft.Message) {
 	c.inflight = append(c.inflight, envelope{msg: m, deliverAt: c.now + delay, seq: c.seq})
 }
 
-func (c *Cluster) fail(format string, args ...any) {
+func (c *Cluster) fail(kind, format string, args ...any) {
 	if c.err == nil {
+		c.errKind, c.errTick = kind, c.now
 		c.err = fmt.Errorf("tick %d (seed %d): "+format, append([]any{c.now, c.cfg.Seed}, args...)...)
 	}
 }
@@ -266,7 +308,7 @@ func (c *Cluster) checkElectionSafety(id raft.NodeID) {
 	}
 	prev, seen := c.leaderOf[s.Term]
 	if seen && prev != s.ID {
-		c.fail("election safety violated: term %d has two leaders, %d and %d", s.Term, prev, s.ID)
+		c.fail("Election Safety", "election safety violated: term %d has two leaders, %d and %d", s.Term, prev, s.ID)
 		return
 	}
 	if seen {
@@ -276,7 +318,7 @@ func (c *Cluster) checkElectionSafety(id raft.NodeID) {
 	log := c.nodes[id].rn.Log()
 	for _, e := range c.committed {
 		if e.Index > uint64(len(log)) || !sameEntry(log[e.Index-1], e) {
-			c.fail("leader completeness violated: node %d leads term %d without committed entry %d", id, s.Term, e.Index)
+			c.fail("Leader Completeness", "leader completeness violated: node %d leads term %d without committed entry %d", id, s.Term, e.Index)
 			return
 		}
 	}
@@ -286,12 +328,12 @@ func (c *Cluster) checkElectionSafety(id raft.NodeID) {
 // and hands out committed entries in order with no gaps.
 func (c *Cluster) checkCommitted(id raft.NodeID, e raft.Entry) {
 	if want := uint64(len(c.nodes[id].applied)) + 1; e.Index != want {
-		c.fail("node %d delivered committed entry %d, expected %d", id, e.Index, want)
+		c.fail("State Machine Safety", "node %d delivered committed entry %d, expected %d", id, e.Index, want)
 		return
 	}
 	if e.Index <= uint64(len(c.committed)) {
 		if first := c.committed[e.Index-1]; !sameEntry(first, e) {
-			c.fail("state machine safety violated: node %d committed %s at index %d, but %s was committed there before",
+			c.fail("State Machine Safety", "state machine safety violated: node %d committed %s at index %d, but %s was committed there before",
 				id, describe(e), e.Index, describe(first))
 		}
 		return
@@ -315,7 +357,7 @@ func (c *Cluster) CheckLogs() {
 			}
 			for x := 0; x < k; x++ {
 				if !sameEntry(a[x], b[x]) {
-					c.fail("log matching violated: nodes %d and %d agree at index %d (term %d) but differ at index %d",
+					c.fail("Log Matching", "log matching violated: nodes %d and %d agree at index %d (term %d) but differ at index %d",
 						c.ids[i], c.ids[j], k, a[k-1].Term, x+1)
 					return
 				}
