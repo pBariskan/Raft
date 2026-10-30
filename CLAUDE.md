@@ -21,8 +21,9 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 ## Where things stand
 
-2026-10-24: M0–M3 done (election, replication, persistence in `raft/`; deterministic simulator
-with disks and safety checks in `sim/`; learning notes 01–03). Next step: M4 (key-value store). Open
+2026-10-24: M0–M4 done (Raft core in `raft/`, key-value store in `kv/`, linearizability checker in
+`check/`, deterministic simulator with disks, clients and safety checks in `sim/`; learning notes
+01–04). Next step: M5 (chaos runner + classic mistakes). Open
 item for M5: the chaos run doesn't yet catch the Figure-8 commit mistake (see learning note 02). Visual explanations for Poyraz live on a
 separate learning page ("Raft Workshop" artifact), not in this repo. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
 section current in a line or two as milestones land.

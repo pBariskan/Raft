@@ -177,11 +177,12 @@ func TestChaosSafety(t *testing.T) {
 			seeds = append(seeds, s)
 		}
 	}
-	totalCommitted := 0
+	totalCommitted, totalOps := 0, 0
 	for _, seed := range seeds {
 		c := New(Config{Seed: seed, Nodes: 5})
 		chaos := rand.New(rand.NewPCG(seed, 0xc4a05))
 		ids := []raft.NodeID{1, 2, 3, 4, 5}
+		w := NewWorkload(c, seed, 3, keys, 3)
 		proposed := 0
 		for i := 0; i < 3000 && c.Err() == nil; i++ {
 			if chaos.IntN(10) == 0 {
@@ -212,6 +213,7 @@ func TestChaosSafety(t *testing.T) {
 			case r < 21:
 				c.SetDropRate(float64(chaos.IntN(4)) / 10)
 			}
+			w.Step()
 			c.Tick()
 		}
 		checkSafe(t, c)
@@ -248,12 +250,17 @@ func TestChaosSafety(t *testing.T) {
 		if !hasFinal() {
 			t.Fatalf("seed %d: the final value was not committed everywhere after healing\nreplay: go test ./sim -run %s -sim.seed=%d", seed, t.Name(), seed)
 		}
+		if !c.RunUntil(w.Idle, 3*settle) {
+			t.Fatalf("seed %d: clients still waiting after healing\nreplay: go test ./sim -run %s -sim.seed=%d", seed, t.Name(), seed)
+		}
 		c.CheckLogs()
 		checkSafe(t, c)
+		checkLinearizable(t, c)
+		totalOps += len(c.History())
 		totalCommitted += len(values(c.Applied(ids[0])))
 	}
 	if len(seeds) > 1 && totalCommitted < len(seeds) {
 		t.Fatalf("only %d values committed over %d seeds: the chaos run is not exercising replication", totalCommitted, len(seeds))
 	}
-	t.Logf("%d seeds, %d client values committed, no safety violations", len(seeds), totalCommitted)
+	t.Logf("%d seeds, %d log entries committed, %d client requests checked for linearizability, no violations", len(seeds), totalCommitted, totalOps)
 }

@@ -25,7 +25,7 @@ The design must not look AI-generated.
 - [x] M3 persistence: `Ready` carries hard state (term, vote) and entries to persist; nodes restart
       from storage; the simulated disk loses unsynced writes on a crash; messages are sent only
       after persisting. Tests: restart keeps vote, no double vote after restart, crash before sync.
-- [ ] M4 key-value store: PUT/GET/DELETE through the log, client sessions (client id + sequence
+- [x] M4 key-value store: PUT/GET/DELETE through the log, client sessions (client id + sequence
       number) so a retry is applied once, reads through the log, simulated clients that retry and
       follow leader redirects.
 - [ ] M5 chaos runner: `cmd/chaos` over many seeds, invariant checks every step, Porcupine

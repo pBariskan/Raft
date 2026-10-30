@@ -6,6 +6,8 @@ import (
 	"math/rand/v2"
 	"sort"
 
+	"github.com/pBariskan/Raft/check"
+	"github.com/pBariskan/Raft/kv"
 	"github.com/pBariskan/Raft/raft"
 )
 
@@ -42,6 +44,8 @@ func (c *Config) setDefaults() {
 
 type envelope struct {
 	msg       raft.Message
+	req       *request  // set for a client → server request instead of msg
+	resp      *response // set for a server → client answer instead of msg
 	deliverAt int
 	seq       int // send order, breaks ties so delivery order is deterministic
 }
@@ -52,6 +56,9 @@ type node struct {
 	applied  []raft.Entry // committed entries handed out since the last (re)start, in order
 	disk     disk
 	restarts uint64
+
+	store   *kv.Store         // rebuilt from the log after every boot
+	waiting map[reqKey]uint64 // client requests this node proposed, by the term it proposed in
 }
 
 // disk is a node's simulated stable storage. It survives crashes; everything else is lost.
@@ -85,6 +92,10 @@ type Cluster struct {
 	inflight []envelope
 	group    map[raft.NodeID]int // partition group per node; nil means fully connected
 	dropRate float64
+
+	clients    []*client
+	history    []check.Operation
+	duplicates int
 
 	leaderOf  map[uint64]raft.NodeID // every leader ever seen, per term
 	committed []raft.Entry           // committed[i] is the entry first committed at index i+1
@@ -128,6 +139,7 @@ func (c *Cluster) boot(id raft.NodeID) {
 		panic(err) // the simulator wrote this disk itself; an error is a bug here
 	}
 	n.rn, n.up, n.applied = rn, true, nil
+	n.store, n.waiting = kv.NewStore(), map[reqKey]uint64{}
 	c.after(id) // a restored node hands its committed entries out again
 }
 
@@ -158,6 +170,10 @@ func (c *Cluster) Tick() {
 	deliver := c.inflight[:due:due]
 	c.inflight = append([]envelope(nil), c.inflight[due:]...)
 	for _, e := range deliver {
+		if e.req != nil || e.resp != nil {
+			c.deliverClientTraffic(e)
+			continue
+		}
 		to := c.nodes[e.msg.To]
 		if !to.up || !c.connected(e.msg.From, e.msg.To) {
 			continue
@@ -171,6 +187,7 @@ func (c *Cluster) Tick() {
 			c.after(id)
 		}
 	}
+	c.tickClients()
 	if c.now%100 == 0 {
 		c.CheckLogs()
 	}
@@ -217,6 +234,7 @@ func (c *Cluster) after(id raft.NodeID) {
 	for _, e := range rd.CommittedEntries {
 		c.checkCommitted(id, e)
 		n.applied = append(n.applied, e)
+		c.serverApplied(id, n.store.Apply(e))
 	}
 	c.checkElectionSafety(id)
 }

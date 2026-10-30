@@ -231,7 +231,7 @@ Each milestone ends green (tests pass) and committed.
       resolution, commit only entries from the current term by majority. Learning note 02.
 - [x] **M3 — Persistence + crash recovery.** Persist term/vote/log before replying; simulated disk
       that drops unsynced writes on crash; restart recovery. Learning note 03.
-- [ ] **M4 — Key-value store + client sessions.** PUT/GET/DELETE through the log, dedupe, client
+- [x] **M4 — Key-value store + client sessions.** PUT/GET/DELETE through the log, dedupe, client
       retries and leader redirect. Learning note 04.
 - [ ] **M5 — Chaos runner + linearizability.** Randomized fault schedules over many seeds,
       invariant checks every step, Porcupine check per run, failing seed printed for replay; fixed
