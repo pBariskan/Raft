@@ -1,0 +1,69 @@
+{
+  "mistake": "no-dedupe",
+  "seeds": 1000,
+  "first_seed": 1,
+  "ticks": 3055018,
+  "crashes": 103829,
+  "partitions": 43829,
+  "leaders": 22899,
+  "requests": 283538,
+  "answered": 283538,
+  "committed": 308570,
+  "duplicates": 0,
+  "failed_seeds": 368,
+  "failures": [
+    {
+      "seed": 4,
+      "profile": "reboot storm",
+      "ticks": 3066,
+      "crashes": 361,
+      "partitions": 12,
+      "leaders": 51,
+      "requests": 106,
+      "answered": 106,
+      "committed": 158,
+      "duplicates": 0,
+      "linearizable": "NOT linearizable",
+      "violation": "Linearizability",
+      "detail": "tick 3066 (seed 4): no single order of operations explains what the clients saw",
+      "violation_tick": 3066
+    },
+    {
+      "seed": 7,
+      "profile": "flaky network",
+      "ticks": 3020,
+      "crashes": 4,
+      "partitions": 145,
+      "leaders": 10,
+      "requests": 98,
+      "answered": 98,
+      "committed": 112,
+      "duplicates": 0,
+      "linearizable": "NOT linearizable",
+      "violation": "Linearizability",
+      "detail": "tick 3020 (seed 7): no single order of operations explains what the clients saw",
+      "violation_tick": 3020
+    },
+    {
+      "seed": 9,
+      "profile": "reboot storm",
+      "ticks": 3070,
+      "crashes": 371,
+      "partitions": 17,
+      "leaders": 46,
+      "requests": 153,
+      "answered": 153,
+      "committed": 203,
+      "duplicates": 0,
+      "linearizable": "NOT linearizable",
+      "violation": "Linearizability",
+      "detail": "tick 3070 (seed 9): no single order of operations explains what the clients saw",
+      "violation_tick": 3070
+    }
+  ],
+  "failures_by_property": {
+    "Linearizability": 368
+  },
+  "seconds": 21.659669994,
+  "go_version": "go1.24.7"
+}

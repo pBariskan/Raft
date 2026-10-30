@@ -24,6 +24,11 @@ type Options struct {
 	MaxDelay      int      `json:"max_delay"`
 	DropRate      float64  `json:"drop_rate"`
 	Mistakes      []string `json:"mistakes"` // names from sim.MistakeSwitches
+
+	// Replay runs the chaos runner's scenario for Seed (its faults and clients) instead of a
+	// quiet cluster, so a failing seed from the chaos runner can be watched step by step.
+	// Nodes, delays and drop rate then come from the scenario.
+	Replay bool `json:"replay"`
 }
 
 // Session is one playground cluster.
@@ -32,6 +37,8 @@ type Session struct {
 	c       *sim.Cluster
 	traffic *sim.Workload
 	auto    bool
+	chaos   *sim.Chaos // set in replay mode
+	result  *sim.ChaosResult
 }
 
 // New starts a session.
@@ -50,14 +57,21 @@ func New(opt Options) (*Session, error) {
 		}
 		on(&m)
 	}
-	c := sim.New(sim.Config{
-		Seed: opt.Seed, Nodes: opt.Nodes,
-		ElectionTick: opt.ElectionTick, HeartbeatTick: opt.HeartbeatTick,
-		MinDelay: opt.MinDelay, MaxDelay: opt.MaxDelay, DropRate: opt.DropRate,
-		Mistakes: m,
-	})
-	c.RecordEvents(true)
-	return &Session{opt: opt, c: c}, nil
+	s := &Session{opt: opt}
+	if opt.Replay {
+		s.chaos = sim.NewChaos(sim.ChaosConfig{Seed: opt.Seed, Mistakes: m})
+		s.c = s.chaos.Cluster()
+		s.opt.Nodes = len(s.c.IDs())
+	} else {
+		s.c = sim.New(sim.Config{
+			Seed: opt.Seed, Nodes: opt.Nodes,
+			ElectionTick: opt.ElectionTick, HeartbeatTick: opt.HeartbeatTick,
+			MinDelay: opt.MinDelay, MaxDelay: opt.MaxDelay, DropRate: opt.DropRate,
+			Mistakes: m,
+		})
+	}
+	s.c.RecordEvents(true)
+	return s, nil
 }
 
 // Cluster gives direct access to the simulation (for tests and scripted lessons).
@@ -89,6 +103,8 @@ type Result struct {
 	Ticks   int    `json:"ticks,omitempty"`   // until: ticks it took
 	Verdict string `json:"verdict,omitempty"` // check: linearizable, not linearizable, unknown
 	Ops     int    `json:"ops,omitempty"`     // check: requests in the history
+
+	Chaos *sim.ChaosResult `json:"chaos,omitempty"` // finish: the replayed scenario's result
 }
 
 // Do runs one command.
@@ -171,6 +187,15 @@ func (s *Session) Do(cmd Command) (Result, error) {
 			s.traffic = sim.NewWorkload(c, s.opt.Seed+1, 3, []string{"x", "y"}, 6)
 		}
 		s.auto = cmd.On
+	case "finish":
+		if s.chaos == nil {
+			return Result{}, fmt.Errorf("play: finish is for replays")
+		}
+		if s.result == nil {
+			r := s.chaos.Finish()
+			s.result = &r
+		}
+		return Result{Chaos: s.result}, nil
 	case "check":
 		h := c.History()
 		v := check.History(h, 5*time.Second)
@@ -182,6 +207,9 @@ func (s *Session) Do(cmd Command) (Result, error) {
 }
 
 func (s *Session) tick() {
+	if s.chaos != nil && s.result == nil && s.chaos.Step() {
+		return
+	}
 	if s.auto {
 		s.traffic.Step()
 	}
@@ -213,6 +241,14 @@ type Snapshot struct {
 	DropRate  float64          `json:"drop_rate"`
 	Traffic   bool             `json:"traffic"`
 	Mistakes  []string         `json:"mistakes"`
+	Replay    *Replay          `json:"replay,omitempty"`
+}
+
+// Replay describes a chaos scenario being replayed.
+type Replay struct {
+	Profile   string           `json:"profile"`
+	Remaining int              `json:"remaining"` // chaos ticks left before the healing phase
+	Result    *sim.ChaosResult `json:"result,omitempty"`
 }
 
 // Node is one server as a viewer sees it.
@@ -244,13 +280,26 @@ type Entry struct {
 // Snapshot returns the current state and the events since the last snapshot. Each node's log is
 // cut to its last logTail entries (0 means all).
 func (s *Session) Snapshot(logTail int) Snapshot {
+	snap := s.Peek(logTail)
+	if ev := s.c.Events(); ev != nil {
+		snap.Events = ev
+	}
+	return snap
+}
+
+// Peek is Snapshot without taking the pending events, for a script that needs to look at the
+// cluster without stealing the feed's events.
+func (s *Session) Peek(logTail int) Snapshot {
 	c := s.c
 	snap := Snapshot{
 		Tick: c.Now(), Seed: c.Seed(),
-		Flights: c.Inflight(), Clients: c.Clients(), Events: c.Events(),
+		Flights: c.Inflight(), Clients: c.Clients(), Events: []sim.Event{},
 		DropRate: c.DropRate(), Traffic: s.auto, Mistakes: append([]string{}, s.opt.Mistakes...),
 	}
 	snap.MinDelay, snap.MaxDelay = c.Delay()
+	if s.chaos != nil {
+		snap.Replay = &Replay{Profile: s.chaos.Profile().Name, Remaining: s.chaos.Remaining(), Result: s.result}
+	}
 	if id, ok := c.StableLeader(); ok {
 		snap.Leader = id
 	}

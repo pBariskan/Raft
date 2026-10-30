@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pBariskan/Raft/raft"
+	"github.com/pBariskan/Raft/sim"
 )
 
 func mustDo(t *testing.T, s *Session, cmd Command) Result {
@@ -119,5 +120,41 @@ func TestBadCommands(t *testing.T) {
 		if _, err := s.Do(cmd); err == nil {
 			t.Errorf("%+v accepted", cmd)
 		}
+	}
+}
+
+func TestReplayShowsTheChaosRunnersFailure(t *testing.T) {
+	// The chaos runner's pinned seed for this mistake (sim/mistakes_test.go), watched through the
+	// playground: same violation, same tick.
+	want := sim.RunChaos(sim.ChaosConfig{Seed: 1, Mistakes: sim.Mistakes{Mistakes: raft.Mistakes{VoteIgnoresLog: true}}})
+	if !want.Failed() {
+		t.Fatal("seed 1 no longer fails with vote-ignores-log; pick another seed")
+	}
+	s, err := New(Options{Seed: 1, Replay: true, Mistakes: []string{"vote-ignores-log"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 5000 && s.Snapshot(0).Violation == ""; i++ {
+		mustDo(t, s, Command{Op: "step"})
+	}
+	snap := s.Snapshot(0)
+	if snap.Broken != want.Violation || snap.Tick != want.ViolationTick {
+		t.Fatalf("replay broke %q at tick %d; chaos runner: %q at tick %d", snap.Broken, snap.Tick, want.Violation, want.ViolationTick)
+	}
+	r := mustDo(t, s, Command{Op: "finish"})
+	if r.Chaos == nil || r.Chaos.Violation != want.Violation {
+		t.Fatalf("finish = %+v", r.Chaos)
+	}
+}
+
+func TestReplayOfACleanSeedPasses(t *testing.T) {
+	s, _ := New(Options{Seed: 5, Replay: true})
+	mustDo(t, s, Command{Op: "step", Ticks: 3100})
+	if snap := s.Snapshot(0); snap.Replay == nil || snap.Replay.Remaining != 0 || snap.Violation != "" {
+		t.Fatalf("replay state %+v, violation %q", snap.Replay, snap.Violation)
+	}
+	r := mustDo(t, s, Command{Op: "finish"})
+	if r.Chaos.Failed() || r.Chaos.Linearizable != "linearizable" {
+		t.Fatalf("clean seed failed: %+v", r.Chaos)
 	}
 }

@@ -1,0 +1,69 @@
+{
+  "mistake": "forget-vote",
+  "seeds": 1000,
+  "first_seed": 1,
+  "ticks": 3045247,
+  "crashes": 102827,
+  "partitions": 43791,
+  "leaders": 22945,
+  "requests": 282799,
+  "answered": 282769,
+  "committed": 307815,
+  "duplicates": 177862,
+  "failed_seeds": 6,
+  "failures": [
+    {
+      "seed": 189,
+      "profile": "reboot storm",
+      "ticks": 154,
+      "crashes": 15,
+      "partitions": 0,
+      "leaders": 2,
+      "requests": 29,
+      "answered": 24,
+      "committed": 25,
+      "duplicates": 0,
+      "linearizable": "",
+      "violation": "Election Safety",
+      "detail": "tick 154 (seed 189): election safety violated: term 2 has two leaders, 3 and 2",
+      "violation_tick": 154
+    },
+    {
+      "seed": 329,
+      "profile": "reboot storm",
+      "ticks": 1924,
+      "crashes": 228,
+      "partitions": 7,
+      "leaders": 33,
+      "requests": 101,
+      "answered": 96,
+      "committed": 130,
+      "duplicates": 311,
+      "linearizable": "",
+      "violation": "Election Safety",
+      "detail": "tick 1924 (seed 329): election safety violated: term 73 has two leaders, 1 and 5",
+      "violation_tick": 1924
+    },
+    {
+      "seed": 534,
+      "profile": "reboot storm",
+      "ticks": 1611,
+      "crashes": 205,
+      "partitions": 6,
+      "leaders": 22,
+      "requests": 110,
+      "answered": 105,
+      "committed": 130,
+      "duplicates": 365,
+      "linearizable": "",
+      "violation": "Election Safety",
+      "detail": "tick 1611 (seed 534): election safety violated: term 67 has two leaders, 3 and 1",
+      "violation_tick": 1611
+    }
+  ],
+  "failures_by_property": {
+    "Election Safety": 6
+  },
+  "seconds": 22.816044922,
+  "go_version": "go1.24.7"
+}

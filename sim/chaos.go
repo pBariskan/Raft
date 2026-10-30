@@ -70,6 +70,24 @@ func (r ChaosResult) Failed() bool { return r.Violation != "" }
 // healing phase. Every safety property is checked on every step; at the end the client history
 // is checked for linearizability and the cluster must have recovered.
 func RunChaos(cfg ChaosConfig) ChaosResult {
+	ch := NewChaos(cfg)
+	for ch.Step() {
+	}
+	return ch.Finish()
+}
+
+// Chaos is one chaos scenario that can be run a tick at a time, so a viewer can watch it.
+type Chaos struct {
+	c    *Cluster
+	cfg  ChaosConfig
+	rng  *rand.Rand
+	w    *Workload
+	res  ChaosResult
+	done int // chaos ticks run so far
+}
+
+// NewChaos sets up a scenario: the cluster, its clients, and the fault schedule's randomness.
+func NewChaos(cfg ChaosConfig) *Chaos {
 	if cfg.Ticks == 0 {
 		cfg.Ticks = 3000
 	}
@@ -77,52 +95,75 @@ func RunChaos(cfg ChaosConfig) ChaosResult {
 		cfg.Faults = Profiles[cfg.Seed%uint64(len(Profiles))]
 	}
 	c := New(Config{Seed: cfg.Seed, Nodes: cfg.Nodes, Mistakes: cfg.Mistakes, MaxDelay: cfg.Faults.MaxDelay})
-	ids := c.ids
-	f := cfg.Faults
-	rng := rand.New(rand.NewPCG(cfg.Seed, 0xc4a05))
-	// Several clients hammering two keys: duplicates and stale reads only show up when other
-	// requests touch the same key in between.
-	w := NewWorkload(c, cfg.Seed, 5, []string{"a", "b"}, 2)
-	res := ChaosResult{Seed: cfg.Seed, Profile: f.Name}
-
-	chance := func(perMille int) bool { return rng.IntN(1000) < perMille }
-	for i := 0; i < cfg.Ticks && c.Err() == nil; i++ {
-		if chance(f.Crash) {
-			id := ids[rng.IntN(len(ids))]
-			if c.IsUp(id) {
-				c.Crash(id)
-				res.Crashes++
-			}
-		}
-		if chance(f.Restart) {
-			c.Restart(ids[rng.IntN(len(ids))])
-		}
-		if chance(f.Partition) {
-			perm := rng.Perm(len(ids))
-			cut := 1 + rng.IntN(len(ids)-1)
-			var a, b []raft.NodeID
-			for k, p := range perm {
-				if k < cut {
-					a = append(a, ids[p])
-				} else {
-					b = append(b, ids[p])
-				}
-			}
-			c.Partition(a, b)
-			res.Partitions++
-		}
-		if chance(f.Heal) {
-			c.Heal()
-		}
-		if chance(f.DropChange) {
-			c.SetDropRate(float64(rng.IntN(f.MaxDrop+1)) / 10)
-		}
-		w.Step()
-		c.Tick()
+	return &Chaos{
+		c:   c,
+		cfg: cfg,
+		rng: rand.New(rand.NewPCG(cfg.Seed, 0xc4a05)),
+		// Several clients hammering two keys: duplicates and stale reads only show up when
+		// other requests touch the same key in between.
+		w:   NewWorkload(c, cfg.Seed, 5, []string{"a", "b"}, 2),
+		res: ChaosResult{Seed: cfg.Seed, Profile: cfg.Faults.Name},
 	}
+}
 
-	// Heal everything and check the cluster recovers: every client gets its answer, and a final
-	// write reaches every server.
+// Cluster is the scenario's cluster.
+func (ch *Chaos) Cluster() *Cluster { return ch.c }
+
+// Profile is the scenario's fault profile.
+func (ch *Chaos) Profile() Faults { return ch.cfg.Faults }
+
+// Remaining is how many chaos ticks are left before the healing phase.
+func (ch *Chaos) Remaining() int { return ch.cfg.Ticks - ch.done }
+
+// Step runs one tick of chaos: maybe inject faults, let the clients act, tick the cluster. It
+// returns false, doing nothing, once the chaos phase is over or a safety check has failed.
+func (ch *Chaos) Step() bool {
+	c, f, ids := ch.c, ch.cfg.Faults, ch.c.ids
+	if ch.done >= ch.cfg.Ticks || c.Err() != nil {
+		return false
+	}
+	ch.done++
+	chance := func(perMille int) bool { return ch.rng.IntN(1000) < perMille }
+	if chance(f.Crash) {
+		id := ids[ch.rng.IntN(len(ids))]
+		if c.IsUp(id) {
+			c.Crash(id)
+			ch.res.Crashes++
+		}
+	}
+	if chance(f.Restart) {
+		c.Restart(ids[ch.rng.IntN(len(ids))])
+	}
+	if chance(f.Partition) {
+		perm := ch.rng.Perm(len(ids))
+		cut := 1 + ch.rng.IntN(len(ids)-1)
+		var a, b []raft.NodeID
+		for k, p := range perm {
+			if k < cut {
+				a = append(a, ids[p])
+			} else {
+				b = append(b, ids[p])
+			}
+		}
+		c.Partition(a, b)
+		ch.res.Partitions++
+	}
+	if chance(f.Heal) {
+		c.Heal()
+	}
+	if chance(f.DropChange) {
+		c.SetDropRate(float64(ch.rng.IntN(f.MaxDrop+1)) / 10)
+	}
+	ch.w.Step()
+	c.Tick()
+	return true
+}
+
+// Finish ends the scenario: remove every fault, require the cluster to recover (every client
+// gets its answer, and a final write reaches every server), and check linearizability.
+func (ch *Chaos) Finish() ChaosResult {
+	c, ids, w := ch.c, ch.c.ids, ch.w
+	res := ch.res
 	if c.Err() == nil {
 		for _, id := range ids {
 			c.Restart(id)

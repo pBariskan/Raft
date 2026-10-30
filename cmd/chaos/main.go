@@ -33,7 +33,8 @@ type Summary struct {
 	Answered   int               `json:"answered"`
 	Committed  int               `json:"committed"`
 	Duplicates int               `json:"duplicates"`
-	Failures   []sim.ChaosResult `json:"failures"`
+	Failed     int               `json:"failed_seeds"`
+	Failures   []sim.ChaosResult `json:"failures"` // the first -keep of them
 	ByProperty map[string]int    `json:"failures_by_property"`
 	Seconds    float64           `json:"seconds"`
 	GoVersion  string            `json:"go_version"`
@@ -47,6 +48,7 @@ func main() {
 	stop := flag.Bool("stop", false, "stop at the first failing seed")
 	out := flag.String("json", "", "write a JSON summary to this file")
 	verbose := flag.Bool("v", false, "print every seed's result")
+	keep := flag.Int("keep", -1, "failing seeds to keep in the JSON report (-1: all)")
 	flag.Parse()
 
 	apply, ok := sim.MistakeSwitches[*mistake]
@@ -125,14 +127,18 @@ func main() {
 		f := sum.Failures[0]
 		fmt.Printf("first: %s\nreplay: go run ./cmd/chaos -mistake %s -from %d -seeds 1 -v\n", f, *mistake, f.Seed)
 	}
+	sum.Failed = len(sum.Failures)
 	if *out != "" {
+		if *keep >= 0 && len(sum.Failures) > *keep {
+			sum.Failures = sum.Failures[:*keep]
+		}
 		b, _ := json.MarshalIndent(sum, "", "  ")
 		if err := os.WriteFile(*out, append(b, '\n'), 0o644); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	}
-	if len(sum.Failures) > 0 && *mistake == "none" {
+	if sum.Failed > 0 && *mistake == "none" {
 		os.Exit(1)
 	}
 }
