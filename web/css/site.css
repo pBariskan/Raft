@@ -16,6 +16,8 @@
   --client-soft: #efdfb8;
   --ok: #2f6b3a;
   --ok-soft: #d3e4d2;
+  --c1: #1c6aa0;
+  --c2: #c4441c;
   --t1: #c9b98f; --t2: #9fb8a4; --t3: #c7a3a0; --t4: #a7b2c9;
   --t5: #d0b07a; --t6: #b3a6c4; --t7: #9fc0bf; --t8: #c4b2a0;
   --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
@@ -33,6 +35,7 @@
     --wire: #5fb0c9; --wire-soft: #173842;
     --client: #e0a530; --client-soft: #3f300c;
     --ok: #78bf84; --ok-soft: #1b3520;
+    --c1: #3f95d0; --c2: #e0602f;
     --t1: #6d6040; --t2: #4b6552; --t3: #6f4946; --t4: #4b5671;
     --t5: #77602f; --t6: #5d5070; --t7: #44696a; --t8: #6b5946;
     color-scheme: dark;
@@ -45,6 +48,7 @@
   --wire: #5fb0c9; --wire-soft: #173842;
   --client: #e0a530; --client-soft: #3f300c;
   --ok: #78bf84; --ok-soft: #1b3520;
+  --c1: #3f95d0; --c2: #e0602f;
   --t1: #6d6040; --t2: #4b6552; --t3: #6f4946; --t4: #4b5671;
   --t5: #77602f; --t6: #5d5070; --t7: #44696a; --t8: #6b5946;
   color-scheme: dark;
@@ -270,7 +274,7 @@ figcaption b, .caption b { color: var(--ink); font-weight: 600; }
 table.data { border-collapse: collapse; width: 100%; font: 14px var(--mono); }
 table.data th { text-align: left; font-weight: 500; color: var(--ink-2); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; border-bottom: 1px solid var(--ink); padding: 6px 10px 6px 0; }
 table.data td { border-bottom: 1px solid var(--rule); padding: 8px 10px 8px 0; vertical-align: top; }
-table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .table-scroll { overflow-x: auto; }
 
 /* ---------- utilities ---------- */

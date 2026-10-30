@@ -21,10 +21,8 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 ## Where things stand
 
-2026-10-30: M0–M6 done (Raft core, key-value store, linearizability checker, deterministic
-simulator, chaos runner with six classic mistakes, real mode with disk/HTTP/benchmarks; learning
-notes 01–06) and the WASM bridge (`play/`, `wasm/`). Next step: the site in `web/`
-(`docs/plans/full-build.md`, Site steps).
+2026-10-30: engine M0–M7 and the site (`web/`: Landing, Workplace, Course, Under the hood) are built.
+Left: Poyraz's review, merge to main, enabling GitHub Pages (`pages.yml`, manual), portfolio card.
 Visual explanations for Poyraz live on a
 separate learning page ("Raft Workshop" artifact), not in this repo. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
 section current in a line or two as milestones land.

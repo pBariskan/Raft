@@ -1,0 +1,39 @@
+name: pages
+
+# Builds the site (web/ plus the WebAssembly engine) and publishes it to GitHub Pages.
+# Manual only for now: run it from the Actions tab once Pages is enabled in the repository
+# settings (Settings → Pages → Source: GitHub Actions).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: build the engine
+        run: scripts/build-web.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

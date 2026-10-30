@@ -239,10 +239,10 @@ Each milestone ends green (tests pass) and committed.
       Learning note 05.
 - [x] **M6 — Real mode.** `storage/` with fsync, `transport/`, `raftd`, local cluster launcher,
       benchmarks producing JSON for the site. Learning note 06.
-- [ ] **M7 — WASM bridge + playground.** (bridge done 2026-10-30, `docs/plans/M7-wasm.md`; playground UI comes with the site) Simulator in the browser, playground UI with all
+- [x] **M7 — WASM bridge + playground.** (2026-10-30: `docs/plans/M7-wasm.md`; playground = the Workplace) Simulator in the browser, playground UI with all
       controls, works on phone width.
-- [ ] **M8 — Guided scenarios.** The four scenarios, scripted on the simulator.
-- [ ] **M9 — Rest of the site + launch.** Hero, chaos results (from real data), architecture,
+- [x] **M8 — Guided scenarios.** (2026-10-30: Workplace scenarios + Course scenes, `docs/plans/site.md`) The four scenarios, scripted on the simulator.
+- [ ] **M9 — Rest of the site + launch.** (2026-10-30: site built; deploy and portfolio card wait for Poyraz) Hero, chaos results (from real data), architecture,
       benchmarks, write-up; deploy to GitHub Pages; public README for reviewers; add the project
       card to the portfolio (separate repo `pBariskan/pBariskan.github.io`).
 

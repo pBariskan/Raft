@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course · Raft</title>
+<meta name="description" content="Learn how Raft works, step by step, on a live cluster running the real implementation. Seventeen short modules, each ending with a few questions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/course.css">
+</head>
+<body>
+<header class="masthead"><div class="wrap">
+  <a class="brand" href="./">raft<span>/</span><em>from scratch</em></a>
+  <nav class="nav">
+    <a href="workplace.html">Workplace</a>
+    <a href="course.html" aria-current="page">Course</a>
+    <a href="under-the-hood.html">Under the hood</a>
+    <a class="gh" href="https://github.com/pBariskan/Raft">GitHub</a>
+  </nav>
+  <button class="theme-toggle" type="button">dark</button>
+</div></header>
+
+<main class="wrap course">
+  <aside class="toc" id="toc" aria-label="Modules">
+    <details open id="toc-details">
+      <summary><span class="label">Course</span> <span class="mono small" id="toc-progress"></span></summary>
+      <ol id="toc-list"></ol>
+      <label class="check small unlock"><input type="checkbox" id="unlock-all"> I know Raft already: open every module</label>
+      <button class="btn small" id="reset-progress" type="button">Reset progress</button>
+    </details>
+  </aside>
+  <article class="lesson" id="lesson" aria-live="polite">
+    <div class="loading">Loading…</div>
+  </article>
+</main>
+
+<footer class="footer"><div class="wrap">
+  <span>Every figure runs the project's real Go code, compiled to WebAssembly.</span>
+  <a href="https://github.com/pBariskan/Raft">github.com/pBariskan/Raft</a>
+</div></footer>
+<script type="module" src="js/course.js"></script>
+</body>
+</html>

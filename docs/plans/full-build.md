@@ -39,17 +39,17 @@ The design must not look AI-generated.
 
 ## Site steps
 
-- [ ] Visual identity (type, colour, layout system) decided before any page is built; reviewed
+- [x] Visual identity (type, colour, layout system) decided before any page is built; reviewed
       against the "AI look" list.
-- [ ] Workplace: cluster view, per-server logs, controls (crash/restart, drag-to-partition, loss,
+- [x] Workplace: cluster view, per-server logs, controls (crash/restart, drag-to-partition, loss,
       latency, speed, pause/step, seed), client panel, event feed, term timeline, live safety
       checks, preset scenarios, shareable seed.
-- [ ] Course: modules that build on each other, each with short explanation steps, visuals driven
+- [x] Course: modules that build on each other, each with short explanation steps, visuals driven
       by the real engine (scripted scenarios), and multiple-choice questions with explanations;
       progress saved in the browser.
-- [ ] Landing and Under the hood (chaos results and bugs from real data, benchmarks, architecture).
-- [ ] Phone-width pass, accessibility pass.
-- [ ] GitHub Actions: build WASM + site; Pages deploy workflow ready (enabled after approval).
+- [x] Landing and Under the hood (chaos results and bugs from real data, benchmarks, architecture).
+- [x] Phone-width pass, accessibility pass.
+- [x] GitHub Actions: build WASM + site; Pages deploy workflow ready (enabled after approval).
 
 ## Course outline (draft)
 
