@@ -21,8 +21,9 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 ## Where things stand
 
-2026-10-30: engine M0–M7 and the site (`web/`: Landing, Workplace, Course, Under the hood) are built.
-Left: Poyraz's review, merge to main, enabling GitHub Pages (`pages.yml`, manual), portfolio card.
+2026-10-30: engine M0–M7 and the site are built, merged to main and live on GitHub Pages. The site
+was then redesigned as a "raft of logs" (`docs/design.md`, `docs/plans/site-theme.md`); left: Poyraz's
+review of it, merge, Pages re-run, portfolio card.
 Visual explanations for Poyraz live on a
 separate learning page ("Raft Workshop" artifact), not in this repo. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
 section current in a line or two as milestones land.
