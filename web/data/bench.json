@@ -1,0 +1,161 @@
+{
+  "generated_at": "2026-10-30T15:18:52Z",
+  "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "cpus": 4,
+    "go": "go1.24.7",
+    "note": "cloud container (shared VM); all nodes on one machine, talking over loopback"
+  },
+  "setup": {
+    "tick_ms": 10,
+    "election_ticks": 10,
+    "op": "PUT",
+    "value_bytes": 16,
+    "seconds_per_run": 3
+  },
+  "throughput": [
+    {
+      "nodes": 3,
+      "clients": 1,
+      "fsync": true,
+      "ops": 1216,
+      "ops_per_sec": 405,
+      "p50_ms": 2.39,
+      "p90_ms": 3.09,
+      "p99_ms": 4.24,
+      "max_ms": 6.88
+    },
+    {
+      "nodes": 3,
+      "clients": 8,
+      "fsync": true,
+      "ops": 6730,
+      "ops_per_sec": 2243,
+      "p50_ms": 3.38,
+      "p90_ms": 4.55,
+      "p99_ms": 7,
+      "max_ms": 12.16
+    },
+    {
+      "nodes": 3,
+      "clients": 32,
+      "fsync": true,
+      "ops": 19953,
+      "ops_per_sec": 6651,
+      "p50_ms": 4.49,
+      "p90_ms": 6.58,
+      "p99_ms": 10.19,
+      "max_ms": 16.49
+    },
+    {
+      "nodes": 3,
+      "clients": 128,
+      "fsync": true,
+      "ops": 38184,
+      "ops_per_sec": 12728,
+      "p50_ms": 9.79,
+      "p90_ms": 13.59,
+      "p99_ms": 17.53,
+      "max_ms": 29.6
+    },
+    {
+      "nodes": 5,
+      "clients": 1,
+      "fsync": true,
+      "ops": 1124,
+      "ops_per_sec": 375,
+      "p50_ms": 2.58,
+      "p90_ms": 3.27,
+      "p99_ms": 4.4,
+      "max_ms": 5.62
+    },
+    {
+      "nodes": 5,
+      "clients": 8,
+      "fsync": true,
+      "ops": 6172,
+      "ops_per_sec": 2057,
+      "p50_ms": 3.62,
+      "p90_ms": 5.07,
+      "p99_ms": 7.37,
+      "max_ms": 26.66
+    },
+    {
+      "nodes": 5,
+      "clients": 32,
+      "fsync": true,
+      "ops": 16964,
+      "ops_per_sec": 5655,
+      "p50_ms": 5.28,
+      "p90_ms": 7.94,
+      "p99_ms": 11.32,
+      "max_ms": 19.97
+    },
+    {
+      "nodes": 5,
+      "clients": 128,
+      "fsync": true,
+      "ops": 26666,
+      "ops_per_sec": 8889,
+      "p50_ms": 13.97,
+      "p90_ms": 19.85,
+      "p99_ms": 26.46,
+      "max_ms": 39.53
+    },
+    {
+      "nodes": 3,
+      "clients": 1,
+      "fsync": false,
+      "ops": 3466,
+      "ops_per_sec": 1155,
+      "p50_ms": 0.81,
+      "p90_ms": 1.13,
+      "p99_ms": 1.83,
+      "max_ms": 6.21
+    },
+    {
+      "nodes": 3,
+      "clients": 32,
+      "fsync": false,
+      "ops": 41758,
+      "ops_per_sec": 13919,
+      "p50_ms": 2.04,
+      "p90_ms": 3.55,
+      "p99_ms": 5.97,
+      "max_ms": 14.96
+    }
+  ],
+  "failover": [
+    {
+      "nodes": 3,
+      "stall_ms": [
+        153,
+        130,
+        153,
+        132,
+        150,
+        108,
+        111
+      ],
+      "median_ms": 132,
+      "min_ms": 108,
+      "max_ms": 153
+    },
+    {
+      "nodes": 5,
+      "stall_ms": [
+        178,
+        155,
+        153,
+        112,
+        111,
+        111,
+        135
+      ],
+      "median_ms": 135,
+      "min_ms": 111,
+      "max_ms": 178
+    }
+  ]
+}

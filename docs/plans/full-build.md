@@ -32,7 +32,7 @@ The design must not look AI-generated.
       linearizability check per run, failing seed printed for replay, JSON summary for the site,
       fixed seed set in CI. "Classic mistakes" switches in the core, each caught by the checkers
       (includes tuning so the Figure-8 mistake is caught, see learning note 02).
-- [ ] M6 real mode: `storage/` (write-ahead log + hard state, fsync), `transport/` (HTTP between
+- [x] M6 real mode: `storage/` (write-ahead log + hard state, fsync), `transport/` (HTTP between
       processes), `cmd/raftd`, `cmd/cluster` launcher, `cmd/bench` writing JSON for the site.
 - [ ] M7 WASM bridge: `wasm/` exposes the simulator to JavaScript (step, crash, partition, drop
       rate, latency, client commands, full state snapshot, event stream, checker status).

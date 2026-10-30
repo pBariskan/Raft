@@ -11,3 +11,6 @@ coverage.*
 
 # WebAssembly build output
 *.wasm
+
+# Local cluster data (cmd/cluster, cmd/raftd)
+/data/

@@ -105,3 +105,18 @@ func TestAppendTwiceIsNotTheSameAsOnce(t *testing.T) {
 		t.Fatalf("with duplicate detection off, log = %q, want a.a.", v)
 	}
 }
+
+func TestParseOp(t *testing.T) {
+	for _, o := range []Op{OpGet, OpPut, OpDelete, OpAppend} {
+		got, err := ParseOp(o.String())
+		if err != nil || got != o {
+			t.Errorf("ParseOp(%q) = %v, %v", o.String(), got, err)
+		}
+	}
+	if got, err := ParseOp("append"); err != nil || got != OpAppend {
+		t.Errorf("ParseOp(append) = %v, %v", got, err)
+	}
+	if _, err := ParseOp("INCR"); err == nil {
+		t.Error("ParseOp(INCR) should fail")
+	}
+}

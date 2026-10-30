@@ -237,7 +237,7 @@ Each milestone ends green (tests pass) and committed.
       invariant checks every step, Porcupine check per run, failing seed printed for replay; fixed
       seed set in CI; "classic mistakes" switches in the core, each caught by the checkers.
       Learning note 05.
-- [ ] **M6 — Real mode.** `storage/` with fsync, `transport/`, `raftd`, local cluster launcher,
+- [x] **M6 — Real mode.** `storage/` with fsync, `transport/`, `raftd`, local cluster launcher,
       benchmarks producing JSON for the site. Learning note 06.
 - [ ] **M7 — WASM bridge + playground.** Simulator in the browser, playground UI with all
       controls, works on phone width.

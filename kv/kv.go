@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/pBariskan/Raft/raft"
 )
@@ -37,6 +38,16 @@ func (o Op) String() string {
 		return "APPEND"
 	}
 	return fmt.Sprintf("Op(%d)", uint8(o))
+}
+
+// ParseOp is the reverse of String: "GET", "PUT", "DELETE" or "APPEND", in any case.
+func ParseOp(s string) (Op, error) {
+	for _, o := range []Op{OpGet, OpPut, OpDelete, OpAppend} {
+		if strings.EqualFold(s, o.String()) {
+			return o, nil
+		}
+	}
+	return 0, fmt.Errorf("kv: unknown operation %q", s)
 }
 
 // Command is one client request as stored in the log. Client and Seq identify it: a client sends
