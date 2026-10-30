@@ -23,9 +23,9 @@ const fig = {
     ${box(20, 20, "C1")}${box(20, 130, "C2")}
     ${box(380, 20, "copy A")}${box(380, 130, "copy B")}
     <line x1="90" y1="37" x2="374" y2="37" class="arrow"/><text x="200" y="30" class="lbl">x=1 (fast)</text>
-    <line x1="90" y1="37" x2="374" y2="140" class="arrow"/><text x="140" y="80" class="lbl">x=1 (slow)</text>
+    <line x1="90" y1="37" x2="374" y2="140" class="arrow"/><text transform="translate(160 62) rotate(19.9)" y="-6" text-anchor="middle" class="lbl">x=1 (slow)</text>
     <line x1="90" y1="147" x2="374" y2="147" class="arrow"/><text x="200" y="165" class="lbl">x=2 (fast)</text>
-    <line x1="90" y1="147" x2="374" y2="44" class="arrow"/><text x="260" y="110" class="lbl">x=2 (slow)</text>
+    <line x1="90" y1="147" x2="374" y2="44" class="arrow"/><text transform="translate(160 122) rotate(-19.9)" y="-6" text-anchor="middle" class="lbl">x=2 (slow)</text>
     <text x="452" y="42" class="res">ends with x=2</text><text x="452" y="152" class="res">ends with x=1</text>
   </svg>`,
   overlap: `<svg viewBox="0 0 560 170" class="cluster static" role="img" aria-label="Two majorities of five servers always share at least one server">
@@ -35,10 +35,10 @@ const fig = {
   </svg>`,
   terms: `<svg viewBox="0 0 560 120" class="cluster static" role="img" aria-label="Terms on a timeline: each starts with an election; term 3 has no leader">
     ${[["1", "S2 leads", 0, 137], ["2", "S5 leads", 137, 137], ["3", "split vote", 274, 137], ["4", "S1 leads", 411, 137]].map(([t, w, x, wd]) => `
-      <rect x="${10 + x}" y="40" width="${wd - 4}" height="34" class="${w === "split vote" ? "term-split" : "term-box"}"/>
-      <rect x="${10 + x}" y="40" width="18" height="34" class="election"/>
-      <text x="${33 + x}" y="62" class="lbl" style="font-size:10.5px">term ${t} · ${w}</text>`).join("")}
-    <text x="10" y="100" class="lbl muted">dark band = election</text><text x="550" y="100" class="lbl muted" text-anchor="end">time →</text>
+      <rect x="${10 + x}" y="34" width="${wd - 4}" height="44" class="${w === "split vote" ? "term-split" : "term-box"}"/>
+      <rect x="${10 + x}" y="34" width="14" height="44" class="election"/>
+      <text x="${32 + x}" y="52" class="lbl in${w === "split vote" ? " sea" : ""}">term ${t}</text><text x="${32 + x}" y="68" class="lbl in${w === "split vote" ? " sea" : ""}">${w}</text>`).join("")}
+    <text x="10" y="102" class="lbl muted">red band = election</text><text x="550" y="100" class="lbl muted" text-anchor="end">time →</text>
   </svg>`,
   matching: `<div class="mini-logs">
       <div><b>leader</b>${[1, 1, 1, 2, 3, 3].map((t, i) => `<span class="cell term-${t}">${t}</span>`).join("")}<span class="cell term-3 new">3</span></div>
@@ -168,7 +168,7 @@ export const MODULES = [
           <ul><li><b>Follower</b>: passive. It answers the leader and candidates, nothing else.</li>
           <li><b>Candidate</b>: trying to become leader by collecting votes.</li>
           <li><b>Leader</b>: handles every client request and tells the followers what to add to their logs.</li></ul>
-          <p>Having one leader keeps things simple: the leader alone decides the order of the log, and everyone else copies it. In the drawing, the leader is the dark box; the little squares it keeps sending are heartbeats.</p>`,
+          <p>Having one leader keeps things simple: the leader alone decides the order of the log, and everyone else copies it. In the drawing, the leader is the log flying the red flag with its term; the little hollow squares it keeps sending are heartbeats.</p>`,
         scene: { nodes: 5, seed: 31, script: () => [
           { wait: 0, note: "Everyone starts as a follower in term 0." },
           { wait: "leader", note: (v, s) => `${L(s)} became leader. The hollow squares it sends are heartbeats: “I'm still here.”` },
@@ -210,7 +210,7 @@ export const MODULES = [
     steps: [
       {
         title: "Heartbeats and the election timer",
-        text: `<p>The leader sends heartbeats regularly (in this simulation, every tick). Every follower runs an <b>election timer</b>; each message from the leader resets it. The bar under each server shows its timer filling up.</p>
+        text: `<p>The leader sends heartbeats regularly (in this simulation, every tick). Every follower runs an <b>election timer</b>; each message from the leader resets it. The small bar above each follower's log shows its timer filling up.</p>
           <p>If the timer runs out, the follower concludes the leader is gone and becomes a candidate. As long as heartbeats arrive, that never happens.</p>`,
         scene: { nodes: 5, seed: 41, speed: 4, script: () => [
           { wait: "leader", note: "Followers' timers keep resetting as heartbeats arrive." },
@@ -359,7 +359,7 @@ export const MODULES = [
     steps: [
       {
         title: "AppendEntries",
-        text: `<p>The leader copies entries with an <b>AppendEntries</b> message (the blue squares; “+1” means it carries one entry). Besides the new entries it says where they go: the <b>index and term of the entry just before them</b>. It also carries the leader's commit index (module 9).</p>
+        text: `<p>The leader copies entries with an <b>AppendEntries</b> message (the pale squares; “+1” means it carries one entry). Besides the new entries it says where they go: the <b>index and term of the entry just before them</b>. It also carries the leader's commit index (module 9).</p>
           <p>A heartbeat is simply an AppendEntries with no entries (the small hollow squares).</p>`,
         scene: { nodes: 3, seed: 81, speed: 3, logs: true, script: () => [
           { wait: "leader", note: "Heartbeats only." },
@@ -508,7 +508,7 @@ export const MODULES = [
       },
       {
         title: "The no-op",
-        text: `<p>If clients are quiet, old entries could wait a long time for a current-term entry to come along. So a new leader immediately appends an empty <b>no-op</b> entry in its own term. Once it commits, so does everything before it. (Those are the ringed squares at the start of each term in the logs.)</p>
+        text: `<p>If clients are quiet, old entries could wait a long time for a current-term entry to come along. So a new leader immediately appends an empty <b>no-op</b> entry in its own term. Once it commits, so does everything before it. (Those are the entries marked with a small ring at the start of each term.)</p>
           <p>Our chaos runner switches the rule off with the mistake <code>commit-old-terms</code> (which also drops the no-op, or the bug would hide). It's rare: <b>{{mistake.commit-old-terms}}</b> of 1,000 seeds caught it. Here is seed 906, fast-forwarded to just before it breaks.</p>`,
         scene: { replay: { seed: 906, mistake: "commit-old-terms", jump: 2560 }, speed: 5, logs: true, script: () => [
           { wait: s => !!s.violation, note: (v, s) => `Caught at tick ${s.tick}: ${s.violation.replace(/^tick \d+ \(seed \d+\): /, "")}` },

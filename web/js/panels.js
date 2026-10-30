@@ -29,6 +29,7 @@ export function renderLogs(container, snap, cols = 18) {
     const lead = snap.leader === node.id ? " (leader)" : "";
     grid.append(h("div", { class: "who" + (node.up ? "" : " down"), role: "rowheader" }, `S${node.id}`, h("span", { class: "muted small" }, node.up ? lead : "down")));
     if (first > 1) grid.append(h("div", { class: "ellipsis" }, "…"));
+    if (n === 0) grid.append(h("div", { role: "cell" }));
     for (let i = first; i <= last; i++) {
       const e = byIndex.get(i);
       if (!e) {
