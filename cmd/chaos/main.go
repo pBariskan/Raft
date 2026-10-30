@@ -22,13 +22,13 @@ import (
 
 // Mistakes maps a command-line name to a classic bug switched on.
 var Mistakes = map[string]func(*sim.Mistakes){
-	"none":                   func(*sim.Mistakes) {},
-	"commit-old-terms":       func(m *sim.Mistakes) { m.CommitOldTerms = true },
-	"vote-ignores-log":       func(m *sim.Mistakes) { m.VoteIgnoresLog = true },
-	"accept-stale-leader":    func(m *sim.Mistakes) { m.AcceptStaleLeader = true },
-	"forget-vote":            func(m *sim.Mistakes) { m.ForgetVote = true },
-	"local-reads":            func(m *sim.Mistakes) { m.LocalReads = true },
-	"no-dedupe":              func(m *sim.Mistakes) { m.NoDedupe = true },
+	"none":                func(*sim.Mistakes) {},
+	"commit-old-terms":    func(m *sim.Mistakes) { m.CommitOldTerms = true },
+	"vote-ignores-log":    func(m *sim.Mistakes) { m.VoteIgnoresLog = true },
+	"accept-stale-leader": func(m *sim.Mistakes) { m.AcceptStaleLeader = true },
+	"forget-vote":         func(m *sim.Mistakes) { m.ForgetVote = true },
+	"local-reads":         func(m *sim.Mistakes) { m.LocalReads = true },
+	"no-dedupe":           func(m *sim.Mistakes) { m.NoDedupe = true },
 }
 
 // Summary is the JSON report.
