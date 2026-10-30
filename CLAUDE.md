@@ -23,7 +23,8 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 2026-10-30: M0–M6 done (Raft core, key-value store, linearizability checker, deterministic
 simulator, chaos runner with six classic mistakes, real mode with disk/HTTP/benchmarks; learning
-notes 01–06). Next step: M7 (WASM bridge), then the site.
+notes 01–06) and the WASM bridge (`play/`, `wasm/`). Next step: the site in `web/`
+(`docs/plans/full-build.md`, Site steps).
 Visual explanations for Poyraz live on a
 separate learning page ("Raft Workshop" artifact), not in this repo. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
 section current in a line or two as milestones land.
@@ -78,3 +79,5 @@ Add commands here as they come to exist (tests, chaos runner, local cluster, WAS
 - `go run ./cmd/raftd -id 1 -cluster 1=127.0.0.1:7001,2=…` — one node; `curl -L -X PUT
   127.0.0.1:7001/kv/x -d hi`, `curl -L 127.0.0.1:7001/kv/x`, `curl 127.0.0.1:7001/status`.
 - `go run ./cmd/bench -json web/data/bench.json` — throughput, latency, leader-crash stall.
+- `scripts/build-web.sh` — build the browser engine (`web/engine/raft.wasm`);
+  `scripts/serve-web.sh` — build and serve `web/` on localhost:8080.

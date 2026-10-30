@@ -22,3 +22,7 @@ jobs:
         run: go test ./...
       - name: chaos runner, fixed seed set
         run: go run ./cmd/chaos -seeds 1000
+      - name: browser engine builds (WebAssembly)
+        run: |
+          GOOS=js GOARCH=wasm go vet ./wasm
+          scripts/build-web.sh

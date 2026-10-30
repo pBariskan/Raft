@@ -239,7 +239,7 @@ Each milestone ends green (tests pass) and committed.
       Learning note 05.
 - [x] **M6 — Real mode.** `storage/` with fsync, `transport/`, `raftd`, local cluster launcher,
       benchmarks producing JSON for the site. Learning note 06.
-- [ ] **M7 — WASM bridge + playground.** Simulator in the browser, playground UI with all
+- [ ] **M7 — WASM bridge + playground.** (bridge done 2026-10-30, `docs/plans/M7-wasm.md`; playground UI comes with the site) Simulator in the browser, playground UI with all
       controls, works on phone width.
 - [ ] **M8 — Guided scenarios.** The four scenarios, scripted on the simulator.
 - [ ] **M9 — Rest of the site + launch.** Hero, chaos results (from real data), architecture,

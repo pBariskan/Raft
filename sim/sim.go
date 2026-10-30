@@ -39,6 +39,18 @@ type Mistakes struct {
 	NoDedupe bool
 }
 
+// MistakeSwitches maps each classic mistake's name (as the chaos runner and the site call it) to
+// the switch that turns it on. "none" switches nothing.
+var MistakeSwitches = map[string]func(*Mistakes){
+	"none":                func(*Mistakes) {},
+	"commit-old-terms":    func(m *Mistakes) { m.CommitOldTerms = true },
+	"vote-ignores-log":    func(m *Mistakes) { m.VoteIgnoresLog = true },
+	"accept-stale-leader": func(m *Mistakes) { m.AcceptStaleLeader = true },
+	"forget-vote":         func(m *Mistakes) { m.ForgetVote = true },
+	"local-reads":         func(m *Mistakes) { m.LocalReads = true },
+	"no-dedupe":           func(m *Mistakes) { m.NoDedupe = true },
+}
+
 func (c *Config) setDefaults() {
 	if c.Nodes == 0 {
 		c.Nodes = 5
@@ -61,6 +73,7 @@ type envelope struct {
 	msg       raft.Message
 	req       *request  // set for a client → server request instead of msg
 	resp      *response // set for a server → client answer instead of msg
+	sentAt    int
 	deliverAt int
 	seq       int // send order, breaks ties so delivery order is deterministic
 }
@@ -116,6 +129,10 @@ type Cluster struct {
 	duplicates int
 
 	halted bool // a node panicked; the run is over
+
+	recording bool                        // keep events for a viewer (see view.go)
+	events    []Event                     // since the last Events call
+	seen      map[raft.NodeID]raft.Status // last status reported per node
 
 	leaderOf  map[uint64]raft.NodeID // every leader ever seen, per term
 	committed []raft.Entry           // committed[i] is the entry first committed at index i+1
@@ -217,6 +234,7 @@ func (c *Cluster) tick() {
 		}
 		to := c.nodes[e.msg.To]
 		if !to.up || !c.connected(e.msg.From, e.msg.To) {
+			c.dropped(e)
 			continue
 		}
 		to.rn.Step(e.msg)
@@ -278,6 +296,7 @@ func (c *Cluster) after(id raft.NodeID) {
 		c.serverApplied(id, n.store.Apply(e))
 	}
 	c.checkElectionSafety(id)
+	c.observe(id)
 }
 
 func (c *Cluster) send(m raft.Message) {
@@ -286,16 +305,23 @@ func (c *Cluster) send(m raft.Message) {
 	// the random sequence of everything that follows.
 	lost := c.net.Float64() < c.dropRate
 	delay := c.cfg.MinDelay + c.net.IntN(c.cfg.MaxDelay-c.cfg.MinDelay+1)
-	if lost || !c.connected(m.From, m.To) {
+	e := envelope{msg: m, sentAt: c.now, deliverAt: c.now + delay, seq: c.seq}
+	if lost {
+		c.lost(e)
 		return
 	}
-	c.inflight = append(c.inflight, envelope{msg: m, deliverAt: c.now + delay, seq: c.seq})
+	if !c.connected(m.From, m.To) {
+		c.dropped(e)
+		return
+	}
+	c.inflight = append(c.inflight, e)
 }
 
 func (c *Cluster) fail(kind, format string, args ...any) {
 	if c.err == nil {
 		c.errKind, c.errTick = kind, c.now
 		c.err = fmt.Errorf("tick %d (seed %d): "+format, append([]any{c.now, c.cfg.Seed}, args...)...)
+		c.emit(Event{Kind: EvViolation, Text: kind + ": " + fmt.Sprintf(format, args...)})
 	}
 }
 
@@ -383,7 +409,12 @@ func (c *Cluster) connected(a, b raft.NodeID) bool {
 
 // Crash stops a node: it no longer ticks, messages sent to it are lost, and everything it had not
 // saved to disk is gone.
-func (c *Cluster) Crash(id raft.NodeID) { c.nodes[id].up = false }
+func (c *Cluster) Crash(id raft.NodeID) {
+	if c.nodes[id].up {
+		c.nodes[id].up = false
+		c.emit(Event{Kind: EvCrash, Node: id})
+	}
+}
 
 // Restart boots a crashed node from its disk. Restarting a running node does nothing.
 func (c *Cluster) Restart(id raft.NodeID) {
@@ -392,6 +423,7 @@ func (c *Cluster) Restart(id raft.NodeID) {
 		return
 	}
 	n.restarts++
+	c.emit(Event{Kind: EvRestart, Node: id})
 	c.boot(id)
 }
 
@@ -411,13 +443,36 @@ func (c *Cluster) Partition(groups ...[]raft.NodeID) {
 			c.group[id] = g
 		}
 	}
+	if c.recording {
+		sides := make([][]raft.NodeID, len(groups)+1)
+		for _, id := range c.ids {
+			sides[c.group[id]] = append(sides[c.group[id]], id)
+		}
+		text := ""
+		for _, side := range sides {
+			if len(side) == 0 {
+				continue
+			}
+			if text != "" {
+				text += " | "
+			}
+			text += fmt.Sprint(side)
+		}
+		c.emit(Event{Kind: EvPartition, Text: text})
+	}
 }
 
 // Heal reconnects every node.
-func (c *Cluster) Heal() { c.group = nil }
+func (c *Cluster) Heal() {
+	c.group = nil
+	c.emit(Event{Kind: EvHeal})
+}
 
 // SetDropRate sets the probability that any newly sent message is lost.
-func (c *Cluster) SetDropRate(p float64) { c.dropRate = p }
+func (c *Cluster) SetDropRate(p float64) {
+	c.dropRate = p
+	c.emit(Event{Kind: EvNetwork, Text: fmt.Sprintf("drop rate %.0f%%", p*100)})
+}
 
 // Status returns one node's state.
 func (c *Cluster) Status(id raft.NodeID) raft.Status { return c.nodes[id].rn.Status() }

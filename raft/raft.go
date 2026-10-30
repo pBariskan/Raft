@@ -185,6 +185,11 @@ type Status struct {
 	Lead      NodeID // the leader this node knows of in Term
 	Commit    uint64 // highest log index known to be committed
 	LastIndex uint64 // index of the last entry in the log
+
+	// The election timer, for pictures of it: ticks since the node last heard from a leader
+	// (or started its election), and the randomized number of ticks after which it campaigns.
+	ElectionElapsed int
+	ElectionTimeout int
 }
 
 // Ready is what the node wants the outside world to do after a Tick, Step or Propose. The caller
@@ -263,7 +268,10 @@ func New(c Config) (*Node, error) {
 
 // Status reports the node's current role, term, vote and known leader.
 func (n *Node) Status() Status {
-	return Status{ID: n.id, State: n.state, Term: n.term, Vote: n.vote, Lead: n.lead, Commit: n.commit, LastIndex: n.lastIndex()}
+	return Status{
+		ID: n.id, State: n.state, Term: n.term, Vote: n.vote, Lead: n.lead, Commit: n.commit, LastIndex: n.lastIndex(),
+		ElectionElapsed: n.electionElapsed, ElectionTimeout: n.randomizedTimeout,
+	}
 }
 
 // Log returns a copy of the node's log.

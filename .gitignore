@@ -14,3 +14,6 @@ coverage.*
 
 # Local cluster data (cmd/cluster, cmd/raftd)
 /data/
+
+# Built by scripts/build-web.sh
+/web/engine/wasm_exec.js

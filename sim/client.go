@@ -20,6 +20,7 @@ type request struct {
 }
 
 type response struct {
+	from      raft.NodeID // the server answering
 	client    uint64
 	seq       uint64
 	result    kv.Result
@@ -63,6 +64,7 @@ func (c *Cluster) Submit(clientID uint64, op kv.Op, key, value string) error {
 	cl.cmd = kv.Command{Client: cl.id, Seq: cl.seq, Op: op, Key: key, Value: value}
 	cl.op = len(c.history)
 	c.history = append(c.history, check.Operation{Client: cl.id, Op: op, Key: key, Value: value, Call: int64(c.now)})
+	c.emit(Event{Kind: EvCall, Client: cl.id, Node: cl.target, Text: describeCmd(cl.cmd)})
 	c.sendRequest(cl)
 	return nil
 }
@@ -81,10 +83,11 @@ func (c *Cluster) sendClientTraffic(e envelope) {
 	c.seq++
 	lost := c.net.Float64() < c.dropRate
 	delay := c.cfg.MinDelay + c.net.IntN(c.cfg.MaxDelay-c.cfg.MinDelay+1)
+	e.sentAt, e.deliverAt, e.seq = c.now, c.now+delay, c.seq
 	if lost {
+		c.lost(e)
 		return
 	}
-	e.deliverAt, e.seq = c.now+delay, c.seq
 	c.inflight = append(c.inflight, e)
 }
 
@@ -94,6 +97,7 @@ func (c *Cluster) tickClients() {
 			// No answer: the server may be down, cut off, or the request lost. Try the next one.
 			cl.retries++
 			cl.target = c.ids[(int(cl.target))%len(c.ids)]
+			c.emit(Event{Kind: EvRetry, Client: cl.id, Node: cl.target})
 			c.sendRequest(cl)
 		}
 	}
@@ -115,22 +119,25 @@ func (c *Cluster) deliverClientTraffic(e envelope) {
 		} else {
 			cl.target = c.ids[(int(cl.target))%len(c.ids)]
 		}
+		c.emit(Event{Kind: EvRedirect, Client: cl.id, Node: cl.target})
 		c.sendRequest(cl)
 		return
 	}
 	cl.busy = false
 	op := &c.history[cl.op]
 	op.Done, op.Return, op.Output = true, int64(c.now), r.result
+	c.emit(Event{Kind: EvReturn, Client: cl.id, Node: r.from, Text: describeCmd(cl.cmd) + " → " + describeResult(r.result)})
 }
 
 func (c *Cluster) serverReceived(req *request) {
 	n := c.nodes[req.to]
 	if !n.up {
+		c.dropped(envelope{req: req, sentAt: c.now, deliverAt: c.now})
 		return
 	}
 	cmd := req.cmd
 	reply := func(r response) {
-		r.client, r.seq = cmd.Client, cmd.Seq
+		r.from, r.client, r.seq = req.to, cmd.Client, cmd.Seq
 		c.sendClientTraffic(envelope{resp: &r})
 	}
 	st := n.rn.Status()
@@ -170,6 +177,7 @@ func (c *Cluster) serverApplied(id raft.NodeID, a kv.Applied) {
 	}
 	if a.Duplicate {
 		c.duplicates++
+		c.emit(Event{Kind: EvDuplicate, Node: id, Client: a.Cmd.Client, Index: a.Index, Text: describeCmd(a.Cmd)})
 	}
 	n := c.nodes[id]
 	key := reqKey{a.Cmd.Client, a.Cmd.Seq}
@@ -177,7 +185,7 @@ func (c *Cluster) serverApplied(id raft.NodeID, a kv.Applied) {
 		return
 	}
 	delete(n.waiting, key)
-	c.sendClientTraffic(envelope{resp: &response{client: a.Cmd.Client, seq: a.Cmd.Seq, result: a.Result}})
+	c.sendClientTraffic(envelope{resp: &response{from: id, client: a.Cmd.Client, seq: a.Cmd.Seq, result: a.Result}})
 }
 
 // Duplicates counts how many times a server skipped a client command because it had already

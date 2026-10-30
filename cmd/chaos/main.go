@@ -20,17 +20,6 @@ import (
 	"github.com/pBariskan/Raft/sim"
 )
 
-// Mistakes maps a command-line name to a classic bug switched on.
-var Mistakes = map[string]func(*sim.Mistakes){
-	"none":                func(*sim.Mistakes) {},
-	"commit-old-terms":    func(m *sim.Mistakes) { m.CommitOldTerms = true },
-	"vote-ignores-log":    func(m *sim.Mistakes) { m.VoteIgnoresLog = true },
-	"accept-stale-leader": func(m *sim.Mistakes) { m.AcceptStaleLeader = true },
-	"forget-vote":         func(m *sim.Mistakes) { m.ForgetVote = true },
-	"local-reads":         func(m *sim.Mistakes) { m.LocalReads = true },
-	"no-dedupe":           func(m *sim.Mistakes) { m.NoDedupe = true },
-}
-
 // Summary is the JSON report.
 type Summary struct {
 	Mistake    string            `json:"mistake"`
@@ -60,7 +49,7 @@ func main() {
 	verbose := flag.Bool("v", false, "print every seed's result")
 	flag.Parse()
 
-	apply, ok := Mistakes[*mistake]
+	apply, ok := sim.MistakeSwitches[*mistake]
 	if !ok {
 		fmt.Fprintf(os.Stderr, "unknown mistake %q; choose one of: %s\n", *mistake, names())
 		os.Exit(2)
@@ -150,7 +139,7 @@ func main() {
 
 func names() string {
 	var n []string
-	for k := range Mistakes {
+	for k := range sim.MistakeSwitches {
 		n = append(n, k)
 	}
 	sort.Strings(n)
