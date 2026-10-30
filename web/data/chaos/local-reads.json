@@ -1,0 +1,69 @@
+{
+  "mistake": "local-reads",
+  "seeds": 1000,
+  "first_seed": 1,
+  "ticks": 3054959,
+  "crashes": 103829,
+  "partitions": 43829,
+  "leaders": 23224,
+  "requests": 328413,
+  "answered": 328413,
+  "committed": 222011,
+  "duplicates": 121160,
+  "failed_seeds": 45,
+  "failures": [
+    {
+      "seed": 52,
+      "profile": "flaky network",
+      "ticks": 3032,
+      "crashes": 5,
+      "partitions": 126,
+      "leaders": 34,
+      "requests": 300,
+      "answered": 300,
+      "committed": 219,
+      "duplicates": 0,
+      "linearizable": "NOT linearizable",
+      "violation": "Linearizability",
+      "detail": "tick 3032 (seed 52): no single order of operations explains what the clients saw",
+      "violation_tick": 3032
+    },
+    {
+      "seed": 98,
+      "profile": "slow storm",
+      "ticks": 3078,
+      "crashes": 93,
+      "partitions": 30,
+      "leaders": 21,
+      "requests": 256,
+      "answered": 256,
+      "committed": 176,
+      "duplicates": 83,
+      "linearizable": "NOT linearizable",
+      "violation": "Linearizability",
+      "detail": "tick 3078 (seed 98): no single order of operations explains what the clients saw",
+      "violation_tick": 3078
+    },
+    {
+      "seed": 100,
+      "profile": "steady",
+      "ticks": 3033,
+      "crashes": 10,
+      "partitions": 14,
+      "leaders": 8,
+      "requests": 170,
+      "answered": 170,
+      "committed": 117,
+      "duplicates": 12,
+      "linearizable": "NOT linearizable",
+      "violation": "Linearizability",
+      "detail": "tick 3033 (seed 100): no single order of operations explains what the clients saw",
+      "violation_tick": 3033
+    }
+  ],
+  "failures_by_property": {
+    "Linearizability": 45
+  },
+  "seconds": 22.177379673,
+  "go_version": "go1.24.7"
+}

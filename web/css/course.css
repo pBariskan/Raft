@@ -1,0 +1,88 @@
+.course { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 48px; padding-top: 32px; align-items: start; }
+.toc { position: sticky; top: 76px; max-height: calc(100vh - 92px); overflow-y: auto; border-top: 1px solid var(--ink); padding-top: 10px; }
+.toc summary { list-style: none; cursor: default; display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px; }
+.toc summary::-webkit-details-marker { display: none; }
+.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: m; }
+.toc li a, .toc li span.locked {
+  display: grid; grid-template-columns: 28px 1fr 16px; gap: 6px; padding: 6px 0;
+  border-bottom: 1px dotted var(--rule); text-decoration: none; font-size: 14.5px; line-height: 1.35;
+}
+.toc li .n { font: 12px var(--mono); color: var(--ink-3); padding-top: 2px; }
+.toc li .st { font: 12px var(--mono); color: var(--ok); text-align: right; }
+.toc li span.locked { color: var(--ink-3); cursor: not-allowed; }
+.toc li span.locked .st { color: var(--ink-3); }
+.toc li a[aria-current="true"] { color: var(--signal); }
+.toc li a[aria-current="true"] .n { color: var(--signal); }
+.toc .unlock { margin: 14px 0 8px; color: var(--ink-2); }
+
+.lesson { max-width: 780px; min-width: 0; }
+.lesson .crumbs { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.lesson h1 { font-size: clamp(30px, 4vw, 42px); margin: 4px 0 18px; }
+.lesson h2 { font-size: 24px; margin: 0 0 12px; }
+.lesson ul, .lesson ol { padding-left: 1.3em; max-width: 66ch; }
+.lesson li { margin-bottom: .3em; }
+.steps { display: flex; gap: 4px; margin: 0 0 26px; }
+.steps button { flex: 1; height: 6px; padding: 0; border: 0; background: var(--paper-3); cursor: pointer; }
+.steps button.done { background: var(--ink-2); }
+.steps button.here { background: var(--signal); }
+.steps button.check { flex: 0 0 22%; background: transparent; border: 1px solid var(--ink-3); height: 6px; }
+.steps button.check.here { background: var(--signal); border-color: var(--signal); }
+.lesson-fig { margin: 22px 0 8px; }
+.lesson-fig .figure { padding: 0; }
+.lesson-fig .controls { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-top: 1px solid var(--rule); background: var(--paper); flex-wrap: wrap; }
+.lesson-fig .scene-note { font-size: 15px; padding: 10px 12px; border-left: 3px solid var(--wire); background: var(--paper); margin: 0; min-height: 3.2em; }
+.lesson-fig .scene-note.alarm { border-left-color: var(--signal); }
+.lesson-fig .extra { padding: 12px; border-top: 1px solid var(--rule); background: var(--paper); }
+.lesson-fig .extra .feed { max-height: 180px; }
+.static-fig { border: 1px solid var(--ink); background: var(--paper-2); padding: 14px; }
+.lesson-nav { display: flex; justify-content: space-between; gap: 12px; margin: 32px 0 0; padding-top: 16px; border-top: 1px solid var(--rule); }
+
+/* static diagrams */
+.cluster.static .arrow { stroke: var(--ink-2); stroke-width: 1.2; marker-end: none; }
+.cluster.static .lbl { font-size: 11px; fill: var(--ink-2); }
+.cluster.static .res { font-size: 12px; fill: var(--signal); font-weight: 600; }
+.cluster.static .maj { fill: none; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.cluster.static .maj.a { stroke: var(--wire); }
+.cluster.static .maj.b { stroke: var(--signal); }
+.cluster.static .term-box { fill: var(--paper); stroke: var(--ink); }
+.cluster.static .term-split { fill: url(#none); fill: var(--paper-3); stroke: var(--ink-3); stroke-dasharray: 4 3; }
+.cluster.static .election { fill: var(--ink); }
+.cluster.static .node .name { font-size: 13px; }
+.mini-logs { font: 12px var(--mono); display: grid; gap: 4px; }
+.mini-logs > div { display: grid; grid-template-columns: 120px repeat(7, 30px); gap: 3px; align-items: center; }
+.mini-logs b { font-weight: 600; }
+.mini-logs .cell { height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--ink); }
+.mini-logs .cell.empty { border: 1px dotted var(--rule); }
+.mini-logs .cell.new { outline: 2px solid var(--signal); outline-offset: 1px; }
+.mini-logs .cell.unc { border-style: dashed; }
+.mini-logs .idx span { text-align: center; color: var(--ink-3); font-size: 10px; }
+.mini-logs .caption { grid-template-columns: none; display: block; margin-top: 8px; font-family: var(--sans); font-size: 14px; color: var(--ink-2); }
+table.compact td, table.compact th { padding: 6px 12px 6px 0; font-size: 13px; }
+.layers { display: grid; gap: 8px; margin: 14px 0 18px; font-size: 14.5px; }
+.layer-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.layer { border: 1px solid var(--ink); padding: 10px 12px; background: var(--paper); }
+.layer.core { background: var(--ink); color: var(--paper); }
+.layer b { font-family: var(--mono); font-weight: 600; }
+
+/* questions */
+.quiz { counter-reset: q; }
+.question { border-top: 1px solid var(--ink); padding: 16px 0 20px; }
+.question legend { font: 500 17px/1.45 var(--sans); padding: 0; margin-bottom: 10px; }
+.question fieldset { border: 0; padding: 0; margin: 0; }
+.option { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border: 1px solid var(--rule); margin-bottom: 6px; cursor: pointer; background: var(--paper); }
+.option:hover { border-color: var(--ink-2); }
+.option input { margin-top: 5px; accent-color: var(--ink); }
+.option.right { border-color: var(--ok); background: var(--ok-soft); }
+.option.wrong { border-color: var(--signal); background: var(--signal-soft); }
+.why { font-size: 15px; margin: 8px 0 0; padding-left: 12px; border-left: 3px solid var(--ok); }
+.why.no { border-left-color: var(--signal); }
+.quiz-result { font: 14px var(--mono); margin-left: 12px; }
+
+@media (max-width: 900px) {
+  .course { grid-template-columns: 1fr; gap: 16px; padding-top: 16px; }
+  .toc { position: static; max-height: none; }
+  .toc summary { cursor: pointer; }
+  .toc summary::after { content: "▾"; font-size: 12px; color: var(--ink-2); }
+  .layer-row { grid-template-columns: 1fr; }
+  .mini-logs > div { grid-template-columns: 76px repeat(7, 26px); }
+}

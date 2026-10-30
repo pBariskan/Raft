@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raft, built from scratch</title>
+<meta name="description" content="A from-scratch implementation of the Raft consensus algorithm and a replicated key-value store in Go. Break a live cluster in your browser, or learn how it works step by step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+<header class="masthead"><div class="wrap">
+  <a class="brand" href="./">raft<span>/</span><em>from scratch</em></a>
+  <nav class="nav">
+    <a href="workplace.html">Workplace</a>
+    <a href="course.html">Course</a>
+    <a href="under-the-hood.html">Under the hood</a>
+    <a class="gh" href="https://github.com/pBariskan/Raft">GitHub</a>
+  </nav>
+  <button class="theme-toggle" type="button">dark</button>
+</div></header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="hero-text">
+      <p class="label">Consensus, built from scratch in Go</p>
+      <h1>Five servers, one history.</h1>
+      <p class="lede">An implementation of the Raft consensus algorithm and a replicated key-value store, tested
+        against thousands of crashes and network splits. The cluster on this page is that code, compiled to
+        WebAssembly and running in your browser.</p>
+      <div class="btn-row">
+        <a class="btn primary" href="workplace.html">Break it in the Workplace</a>
+        <a class="btn" href="course.html">Learn how it works</a>
+      </div>
+    </div>
+    <figure class="hero-fig">
+      <div class="figure" id="hero"><div class="loading">Starting five servers…</div></div>
+      <figcaption>Live. <b>Click a server to crash it</b>, click again to restart it. Three clients keep writing.
+        <span id="hero-status"></span></figcaption>
+    </figure>
+  </section>
+
+  <section class="facts" id="facts" aria-label="Results from real runs"></section>
+
+  <section class="section">
+    <div class="section-head"><p class="label">Contents</p><h2>Where to go</h2></div>
+    <ol class="contents">
+      <li><a href="workplace.html"><span class="n">01</span><span><b>Workplace</b>The full simulator. Crash and restart
+        servers, split the network, lose and delay messages, send requests, switch on a classic mistake, replay any
+        chaos seed, and watch the safety checks.</span><span class="go">→</span></a></li>
+      <li><a href="course.html"><span class="n">02</span><span><b>Course</b>Seventeen short modules, from “why copies
+        disagree” to persistence, linearizability and testing. Each step builds on the last, with a live cluster and
+        questions to pass before moving on.</span><span class="go">→</span></a></li>
+      <li><a href="under-the-hood.html"><span class="n">03</span><span><b>Under the hood</b>How it was tested and
+        what the tests found, benchmarks of real servers on disk and network, and how the code is put
+        together.</span><span class="go">→</span></a></li>
+      <li><a href="https://github.com/pBariskan/Raft"><span class="n">04</span><span><b>Source</b>The Go code, the plans
+        and the learning notes written along the way.</span><span class="go">↗</span></a></li>
+    </ol>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><p class="label">What it is</p><h2>One algorithm, three ways to run it</h2></div>
+    <div class="cols3">
+      <div><h3>The core</h3><p>Leader election, log replication, the commit rule and persistence, written against
+        Figure 2 of the Raft paper. The core never touches a clock, a socket or a file, so it runs identically
+        everywhere. No Raft library was used.</p></div>
+      <div><h3>The simulator</h3><p>Virtual time, a network that delays, loses and splits messages, and servers that
+        crash and reboot from their simulated disks. Seeded, so every run can be replayed exactly. It powers the
+        tests, the chaos runner and this site.</p></div>
+      <div><h3>Real servers</h3><p>The same core behind a 10 ms clock, a checksummed write-ahead log with fsync, and
+        HTTP between processes. A launcher runs a local cluster you can kill -9; a benchmark measures it.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer"><div class="wrap">
+  <span>Built by Poyraz as a portfolio and learning project.</span>
+  <a href="https://github.com/pBariskan/Raft">github.com/pBariskan/Raft</a>
+</div></footer>
+<script type="module" src="js/home.js"></script>
+</body>
+</html>

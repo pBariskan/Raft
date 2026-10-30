@@ -1,0 +1,69 @@
+{
+  "mistake": "vote-ignores-log",
+  "seeds": 1000,
+  "first_seed": 1,
+  "ticks": 672055,
+  "crashes": 26126,
+  "partitions": 5746,
+  "leaders": 5936,
+  "requests": 93663,
+  "answered": 88982,
+  "committed": 94686,
+  "duplicates": 18181,
+  "failed_seeds": 955,
+  "failures": [
+    {
+      "seed": 1,
+      "profile": "churn",
+      "ticks": 200,
+      "crashes": 6,
+      "partitions": 4,
+      "leaders": 5,
+      "requests": 15,
+      "answered": 11,
+      "committed": 15,
+      "duplicates": 0,
+      "linearizable": "",
+      "violation": "Leader Completeness",
+      "detail": "tick 200 (seed 1): leader completeness violated: node 2 leads term 9 without committed entry 12",
+      "violation_tick": 200
+    },
+    {
+      "seed": 2,
+      "profile": "flaky network",
+      "ticks": 365,
+      "crashes": 0,
+      "partitions": 9,
+      "leaders": 3,
+      "requests": 26,
+      "answered": 21,
+      "committed": 26,
+      "duplicates": 0,
+      "linearizable": "",
+      "violation": "Leader Completeness",
+      "detail": "tick 365 (seed 2): leader completeness violated: node 5 leads term 13 without committed entry 25",
+      "violation_tick": 365
+    },
+    {
+      "seed": 3,
+      "profile": "slow storm",
+      "ticks": 960,
+      "crashes": 23,
+      "partitions": 8,
+      "leaders": 8,
+      "requests": 61,
+      "answered": 56,
+      "committed": 66,
+      "duplicates": 58,
+      "linearizable": "",
+      "violation": "Leader Completeness",
+      "detail": "tick 960 (seed 3): leader completeness violated: node 1 leads term 38 without committed entry 58",
+      "violation_tick": 960
+    }
+  ],
+  "failures_by_property": {
+    "Leader Completeness": 955
+  },
+  "seconds": 4.680535832,
+  "go_version": "go1.24.7"
+}

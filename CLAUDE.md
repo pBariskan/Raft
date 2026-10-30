@@ -10,17 +10,21 @@ start at the first unticked milestone and tick items as they land. The agreed si
 
 ## Talking to Poyraz
 
-- Reply in the language Poyraz writes in (usually Turkish). Code, comments, docs, commit messages
-  and site text are in English.
-- Learning comes first: follow "How we work" in `PROJECT.md` for every milestone (explain before,
-  test-first, learning note after, check understanding before moving on).
+- Lessons are in English (Poyraz's request, 2026-10-24): topic explanations, check questions and
+  the learning page. Short chat can follow the language Poyraz writes in. Code, comments, docs,
+  commit messages and site text are in English.
+- Since 2026-10-24 (15:05) Poyraz wants the whole project built first, then learns from the site's
+  Course. Don't stop per milestone for lessons or check questions; still test-first and still write
+  learning notes (they feed the Course). Plan: `docs/plans/full-build.md`.
 - Poyraz wants to learn **how the system works, not the code**. Explain behaviour (servers,
   messages, failures, why a rule exists), never walk through Go line by line, no Go tutorials.
 
 ## Where things stand
 
-Set up on 2026-10-24: only `PROJECT.md`, this file and the mockup exist; no code yet. Next step:
-M0, then M1. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
+2026-10-30: engine M0–M7 and the site (`web/`: Landing, Workplace, Course, Under the hood) are built.
+Left: Poyraz's review, merge to main, enabling GitHub Pages (`pages.yml`, manual), portfolio card.
+Visual explanations for Poyraz live on a
+separate learning page ("Raft Workshop" artifact), not in this repo. For each milestone, write its plan in `docs/plans/` first, then build. Keep this
 section current in a line or two as milestones land.
 
 ## Working rules
@@ -63,3 +67,15 @@ Poyraz's global preferences, copied here because cloud sessions don't see their 
 Add commands here as they come to exist (tests, chaos runner, local cluster, WASM build, site).
 
 - `go test ./...` — all tests (from M0 on).
+- `gofmt -l . && go vet ./... && go test -race ./...` — what CI runs (`.github/workflows/test.yml`).
+- `go test ./sim -run TestChaosSafety -sim.seed=N` — replay one chaos seed.
+- `go run ./cmd/chaos -seeds 1000 [-mistake NAME] [-json out.json] [-stop]` — chaos runner;
+  `-from N -seeds 1 -v` replays seed N.
+- `go test -short ./...` — quicker run (fewer chaos seeds).
+- `go run ./cmd/cluster -n 3 [-fresh]` — real cluster on this machine (raftd processes on ports
+  7001+, data in `data/`); prompt: `status`, `kill N`, `start N`, `put K V`, `get K`, `quit`.
+- `go run ./cmd/raftd -id 1 -cluster 1=127.0.0.1:7001,2=…` — one node; `curl -L -X PUT
+  127.0.0.1:7001/kv/x -d hi`, `curl -L 127.0.0.1:7001/kv/x`, `curl 127.0.0.1:7001/status`.
+- `go run ./cmd/bench -json web/data/bench.json` — throughput, latency, leader-crash stall.
+- `scripts/build-web.sh` — build the browser engine (`web/engine/raft.wasm`);
+  `scripts/serve-web.sh` — build and serve `web/` on localhost:8080.

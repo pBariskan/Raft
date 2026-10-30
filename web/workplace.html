@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workplace · Raft</title>
+<meta name="description" content="Run a real Raft cluster in your browser: crash servers, split the network, lose messages, send requests, and watch the safety checks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/workplace.css">
+</head>
+<body>
+<header class="masthead"><div class="wrap">
+  <a class="brand" href="./">raft<span>/</span><em>from scratch</em></a>
+  <nav class="nav">
+    <a href="workplace.html" aria-current="page">Workplace</a>
+    <a href="course.html">Course</a>
+    <a href="under-the-hood.html">Under the hood</a>
+    <a class="gh" href="https://github.com/pBariskan/Raft">GitHub</a>
+  </nav>
+  <button class="theme-toggle" type="button">dark</button>
+</div></header>
+
+<main class="wrap wp">
+  <div class="wp-head">
+    <div>
+      <p class="label">Workplace</p>
+      <h1 class="wp-title">Break the cluster.</h1>
+    </div>
+    <p class="muted wp-intro">This is the real Go implementation compiled to WebAssembly, not an animation of it.
+      Click a server to crash it, split the network, make messages disappear, send requests, and see whether
+      the safety checks hold.</p>
+  </div>
+
+  <div class="scenarios" aria-label="Scenarios">
+    <span class="label">Try</span>
+    <button class="btn small" data-scenario="crash-leader">Leader crashes</button>
+    <button class="btn small" data-scenario="minority-leader">Leader cut off in a minority</button>
+    <button class="btn small" data-scenario="old-leader">Old leader comes back</button>
+    <button class="btn small" data-scenario="majority-down">Majority down</button>
+    <button class="btn small" data-scenario="lossy">Lossy network</button>
+    <button class="btn small" data-scenario="slow">Slow network, split votes</button>
+  </div>
+
+  <div class="wp-grid">
+    <section class="wp-main">
+      <figure>
+        <div class="figure" id="figure"><div class="loading" id="loading">Loading the engine (about 1 MB)…</div></div>
+        <div class="legend">
+          <span><i class="l-vote"></i>vote request / reply</span>
+          <span><i class="l-app"></i>entries (+n)</span>
+          <span><i class="l-hb"></i>heartbeat</span>
+          <span><i class="l-client"></i>client request / reply</span>
+          <span><i class="l-lost">×</i>lost or dropped</span>
+        </div>
+      </figure>
+
+      <div class="transport">
+        <button class="btn primary" id="play">Pause</button>
+        <button class="btn" id="step" title="Advance one tick">Step</button>
+        <button class="btn" id="step10" title="Advance ten ticks">+10</button>
+        <label class="speed"><span class="label">speed</span>
+          <input type="range" id="speed" min="0" max="7" step="1" value="3" aria-label="Speed">
+          <output id="speed-out" class="mono small">6 ticks/s</output></label>
+      </div>
+      <p class="status mono" id="status" aria-live="polite"></p>
+      <p class="note" id="note" hidden></p>
+
+      <div class="wp-lower">
+        <div>
+          <h2 class="h-small">Logs</h2>
+          <p class="small muted">One row per server, by log index. The number is the term the entry was created in.
+            Solid = committed, hatched = not yet. A dot marks a client command, a ring the leader's no-op.</p>
+          <div class="logs" id="logs"></div>
+        </div>
+        <div>
+          <h2 class="h-small">Key-value stores</h2>
+          <p class="small muted">What each server's state machine holds after applying its committed entries.</p>
+          <div id="stores"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="wp-side">
+      <section class="panel" id="node-panel">
+        <h3>Server</h3>
+        <p class="small muted" id="node-hint">Click a server in the diagram.</p>
+        <div id="node-info"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Network</h3>
+        <p class="small muted">Pick the servers to cut off, then split.</p>
+        <div class="btn-row" id="split-picks"></div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn small" id="split">Split network</button>
+          <button class="btn small" id="heal">Heal</button>
+        </div>
+        <div class="grid2" style="margin-top:14px">
+          <label class="field">message loss <output id="loss-out">0%</output>
+            <input type="range" id="loss" min="0" max="60" step="5" value="0"></label>
+          <label class="field">delay (ticks) <output id="delay-out">1–3</output>
+            <input type="range" id="delay" min="1" max="12" step="1" value="3"></label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Client</h3>
+        <form class="row" id="client-form">
+          <label class="field">op
+            <select id="op"><option>PUT</option><option>GET</option><option>APPEND</option><option>DELETE</option></select></label>
+          <label class="field">key <input type="text" id="key" value="x" size="4" maxlength="12"></label>
+          <label class="field">value <input type="text" id="value" value="1" size="5" maxlength="12"></label>
+          <button class="btn primary small" type="submit">Send</button>
+        </form>
+        <label class="check"><input type="checkbox" id="traffic"> background traffic (3 clients on keys x and y)</label>
+      </section>
+
+      <section class="panel">
+        <h3>Safety checks</h3>
+        <ul class="check-list" id="checks"></ul>
+        <div class="row" style="margin-top:10px">
+          <button class="btn small" id="lin">Check linearizability</button>
+          <span class="small mono" id="lin-out"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Setup</h3>
+        <div class="grid2">
+          <label class="field">servers
+            <select id="nodes"><option>3</option><option selected>5</option><option>7</option></select></label>
+          <label class="field">seed <input type="number" id="seed" min="1" max="999999999"></label>
+        </div>
+        <label class="field" style="margin-top:10px">classic mistake switched on
+          <select id="mistake">
+            <option value="none">none: correct Raft</option>
+            <option value="commit-old-terms">commit-old-terms (Figure 8)</option>
+            <option value="vote-ignores-log">vote-ignores-log</option>
+            <option value="accept-stale-leader">accept-stale-leader</option>
+            <option value="forget-vote">forget-vote</option>
+            <option value="local-reads">local-reads</option>
+            <option value="no-dedupe">no-dedupe</option>
+          </select></label>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn small" id="reset">Start over</button>
+          <button class="btn small" id="replay" title="Run the chaos runner's scenario for this seed: same faults, same clients">Replay chaos seed</button>
+          <button class="btn small" id="share">Copy link</button>
+        </div>
+        <p class="small muted" id="replay-info" hidden></p>
+      </section>
+
+      <section class="panel">
+        <h3>Events</h3>
+        <label class="check small"><input type="checkbox" id="verbose"> every event (followers, lost messages)</label>
+        <div class="feed" id="feed" aria-live="off"></div>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<footer class="footer"><div class="wrap">
+  <span>Raft consensus and a replicated key-value store, built from scratch in Go.</span>
+  <a href="https://github.com/pBariskan/Raft">github.com/pBariskan/Raft</a>
+</div></footer>
+<script type="module" src="js/workplace.js"></script>
+</body>
+</html>

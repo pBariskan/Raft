@@ -1,0 +1,69 @@
+{
+  "mistake": "accept-stale-leader",
+  "seeds": 1000,
+  "first_seed": 1,
+  "ticks": 2490874,
+  "crashes": 98121,
+  "partitions": 32125,
+  "leaders": 20746,
+  "requests": 240735,
+  "answered": 239279,
+  "committed": 262517,
+  "duplicates": 166354,
+  "failed_seeds": 308,
+  "failures": [
+    {
+      "seed": 1,
+      "profile": "churn",
+      "ticks": 2363,
+      "crashes": 47,
+      "partitions": 49,
+      "leaders": 15,
+      "requests": 356,
+      "answered": 351,
+      "committed": 378,
+      "duplicates": 90,
+      "linearizable": "",
+      "violation": "Internal consistency",
+      "detail": "tick 2363 (seed 1): a node gave up: raft: node 5 asked to overwrite committed entry 378",
+      "violation_tick": 2363
+    },
+    {
+      "seed": 2,
+      "profile": "flaky network",
+      "ticks": 821,
+      "crashes": 1,
+      "partitions": 21,
+      "leaders": 10,
+      "requests": 120,
+      "answered": 115,
+      "committed": 130,
+      "duplicates": 5,
+      "linearizable": "",
+      "violation": "Internal consistency",
+      "detail": "tick 821 (seed 2): a node gave up: raft: node 1 asked to overwrite committed entry 122",
+      "violation_tick": 821
+    },
+    {
+      "seed": 5,
+      "profile": "steady",
+      "ticks": 619,
+      "crashes": 0,
+      "partitions": 3,
+      "leaders": 3,
+      "requests": 268,
+      "answered": 263,
+      "committed": 268,
+      "duplicates": 0,
+      "linearizable": "",
+      "violation": "Internal consistency",
+      "detail": "tick 619 (seed 5): a node gave up: raft: node 2 asked to overwrite committed entry 229",
+      "violation_tick": 619
+    }
+  ],
+  "failures_by_property": {
+    "Internal consistency": 308
+  },
+  "seconds": 22.575207806999998,
+  "go_version": "go1.24.7"
+}

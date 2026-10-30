@@ -1,0 +1,18 @@
+{
+  "mistake": "none",
+  "seeds": 10000,
+  "first_seed": 1,
+  "ticks": 30551777,
+  "crashes": 1040255,
+  "partitions": 439376,
+  "leaders": 228769,
+  "requests": 2813454,
+  "answered": 2813454,
+  "committed": 3063879,
+  "duplicates": 1739579,
+  "failed_seeds": 0,
+  "failures": null,
+  "failures_by_property": {},
+  "seconds": 196.517159829,
+  "go_version": "go1.24.7"
+}

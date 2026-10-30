@@ -1,0 +1,54 @@
+{
+  "mistake": "commit-old-terms",
+  "seeds": 1000,
+  "first_seed": 1,
+  "ticks": 3050479,
+  "crashes": 103790,
+  "partitions": 43786,
+  "leaders": 23364,
+  "requests": 289181,
+  "answered": 289171,
+  "committed": 292056,
+  "duplicates": 167943,
+  "failed_seeds": 2,
+  "failures": [
+    {
+      "seed": 906,
+      "profile": "churn",
+      "ticks": 2603,
+      "crashes": 51,
+      "partitions": 36,
+      "leaders": 24,
+      "requests": 306,
+      "answered": 301,
+      "committed": 301,
+      "duplicates": 0,
+      "linearizable": "",
+      "violation": "Leader Completeness",
+      "detail": "tick 2603 (seed 906): leader completeness violated: node 5 leads term 109 without committed entry 297",
+      "violation_tick": 2603
+    },
+    {
+      "seed": 936,
+      "profile": "churn",
+      "ticks": 1288,
+      "crashes": 22,
+      "partitions": 18,
+      "leaders": 10,
+      "requests": 197,
+      "answered": 192,
+      "committed": 197,
+      "duplicates": 62,
+      "linearizable": "",
+      "violation": "State Machine Safety",
+      "detail": "tick 1288 (seed 936): state machine safety violated: node 1 committed (term 32, \"{\\\"c\\\":2,\\\"s\\\":36,\\\"o\\\":1,\\\"k\\\":\\\"b\\\",\\\"v\\\":\\\"190\\\"}\") at index 193, but (term 35, \"{\\\"c\\\":5,\\\"s\\\":43,\\\"o\\\":0,\\\"k\\\":\\\"a\\\"}\") was committed there before",
+      "violation_tick": 1288
+    }
+  ],
+  "failures_by_property": {
+    "Leader Completeness": 1,
+    "State Machine Safety": 1
+  },
+  "seconds": 24.284173734,
+  "go_version": "go1.24.7"
+}

@@ -136,6 +136,16 @@ checked for linearizability with Porcupine (`github.com/anishathalye/porcupine`)
 
 ## The website
 
+**Changed by Poyraz on 2026-10-24 (15:05):** the site now has two main areas, a **Workplace**
+(simulation screen: run any scenario with any intervention) and a **Course** (step-by-step lessons
+that build on each other, strong visuals, multiple-choice questions). Poyraz learns the project from
+the Course, after the whole project is built. The design must not look AI-generated. Plan and
+checklist: `docs/plans/full-build.md`. The six sections below map onto it: Hero → Landing,
+Playground + Guided scenarios → Workplace (presets), the teaching role → Course, Chaos testing +
+How it's built + Benchmarks → "Under the hood".
+
+Original structure, kept for reference:
+
 Agreed structure (mockup: `docs/mockups/site-sections.html`; Poyraz liked the structure, the
 visual design in the mockup is rough and should be improved):
 
@@ -164,6 +174,11 @@ The site must be usable on a phone (reviewers often open links on mobile), and t
 make sense to someone who has never heard of Raft.
 
 ## How we work (learning-first vibe coding)
+
+**Changed on 2026-10-24 (15:05):** Poyraz asked to build the whole project first and learn it from
+the Course afterwards. The per-milestone loop below (explain before, check questions after) is
+paused; learning notes are still written per milestone because they feed the Course.
+
 
 Claude writes the code. Poyraz said explicitly: **don't explain the code; teach how the system
 works.** So explanations are about behaviour, never line-by-line Go: what each server does, which
@@ -207,27 +222,27 @@ or commit.
 
 Each milestone ends green (tests pass) and committed.
 
-- [ ] **M0 — Setup.** Go module, folder layout, `go test ./...` in GitHub Actions, `.gitignore`,
+- [x] **M0 — Setup.** Go module, folder layout, `go test ./...` in GitHub Actions, `.gitignore`,
       empty `docs/bugs.md` and `docs/learning/`.
-- [ ] **M1 — Simulator + leader election.** Deterministic sim (clock, network, seeded RNG);
+- [x] **M1 — Simulator + leader election.** Deterministic sim (clock, network, seeded RNG);
       election with randomized timeouts and terms; tests: one leader emerges, re-election after
       leader crash, no two leaders in a term. Learning note 01.
-- [ ] **M2 — Log replication + commit rule.** AppendEntries, consistency check, conflict
+- [x] **M2 — Log replication + commit rule.** AppendEntries, consistency check, conflict
       resolution, commit only entries from the current term by majority. Learning note 02.
-- [ ] **M3 — Persistence + crash recovery.** Persist term/vote/log before replying; simulated disk
+- [x] **M3 — Persistence + crash recovery.** Persist term/vote/log before replying; simulated disk
       that drops unsynced writes on crash; restart recovery. Learning note 03.
-- [ ] **M4 — Key-value store + client sessions.** PUT/GET/DELETE through the log, dedupe, client
+- [x] **M4 — Key-value store + client sessions.** PUT/GET/DELETE through the log, dedupe, client
       retries and leader redirect. Learning note 04.
-- [ ] **M5 — Chaos runner + linearizability.** Randomized fault schedules over many seeds,
+- [x] **M5 — Chaos runner + linearizability.** Randomized fault schedules over many seeds,
       invariant checks every step, Porcupine check per run, failing seed printed for replay; fixed
       seed set in CI; "classic mistakes" switches in the core, each caught by the checkers.
       Learning note 05.
-- [ ] **M6 — Real mode.** `storage/` with fsync, `transport/`, `raftd`, local cluster launcher,
+- [x] **M6 — Real mode.** `storage/` with fsync, `transport/`, `raftd`, local cluster launcher,
       benchmarks producing JSON for the site. Learning note 06.
-- [ ] **M7 — WASM bridge + playground.** Simulator in the browser, playground UI with all
+- [x] **M7 — WASM bridge + playground.** (2026-10-30: `docs/plans/M7-wasm.md`; playground = the Workplace) Simulator in the browser, playground UI with all
       controls, works on phone width.
-- [ ] **M8 — Guided scenarios.** The four scenarios, scripted on the simulator.
-- [ ] **M9 — Rest of the site + launch.** Hero, chaos results (from real data), architecture,
+- [x] **M8 — Guided scenarios.** (2026-10-30: Workplace scenarios + Course scenes, `docs/plans/site.md`) The four scenarios, scripted on the simulator.
+- [ ] **M9 — Rest of the site + launch.** (2026-10-30: site built; deploy and portfolio card wait for Poyraz) Hero, chaos results (from real data), architecture,
       benchmarks, write-up; deploy to GitHub Pages; public README for reviewers; add the project
       card to the portfolio (separate repo `pBariskan/pBariskan.github.io`).
 

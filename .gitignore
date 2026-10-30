@@ -1,1 +1,19 @@
+# OS / editor
 .DS_Store
+.idea/
+.vscode/
+
+# Go build and test output
+/bin/
+*.test
+*.out
+coverage.*
+
+# WebAssembly build output
+*.wasm
+
+# Local cluster data (cmd/cluster, cmd/raftd)
+/data/
+
+# Built by scripts/build-web.sh
+/web/engine/wasm_exec.js
