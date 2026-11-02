@@ -1,7 +1,7 @@
 .wp-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 32px; align-items: end; padding: 32px 0 20px; }
 .wp-title { font-size: clamp(32px, 4.4vw, 48px); margin: 4px 0 0; }
 .wp-intro { margin: 0; font-size: 16px; }
-.scenarios { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule); margin-bottom: 18px; }
+.scenarios { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); margin-bottom: 18px; }
 .scenarios .label { margin-right: 6px; }
 .wp-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 36px; align-items: start; }
 .wp-side { position: sticky; top: 72px; max-height: calc(100vh - 84px); overflow-y: auto; padding-right: 4px; }
@@ -9,7 +9,7 @@
 .transport .speed { display: flex; align-items: center; gap: 10px; margin-left: 8px; flex: 1; min-width: 200px; }
 .transport .speed input { max-width: 160px; }
 .status { font-size: 13px; margin: 10px 0 0; min-height: 1.5em; }
-.note { border-left: 3px solid var(--signal); padding: 6px 12px; background: var(--paper-2); font-size: 15px; margin: 10px 0 0; }
+.note { border-left: 4px solid var(--flag); padding: 8px 14px; background: var(--paper-2); border-radius: 0 6px 6px 0; font-size: 15px; margin: 10px 0 0; }
 .wp-lower { display: grid; gap: 28px; margin-top: 28px; }
 .h-small { font-size: 20px; margin-bottom: 4px; }
 #figure { min-height: 300px; }

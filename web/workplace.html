@@ -7,18 +7,18 @@
 <meta name="description" content="Run a real Raft cluster in your browser: crash servers, split the network, lose messages, send requests, and watch the safety checks.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:ital,wght@0,500;0,700;1,500&family=Karla:ital,wght@0,400;0,600;0,700;1,400&family=Spline+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/site.css">
 <link rel="stylesheet" href="css/workplace.css">
 </head>
 <body>
 <header class="masthead"><div class="wrap">
-  <a class="brand" href="./">raft<span>/</span><em>from scratch</em></a>
+  <a class="brand" href="./"><svg viewBox="0 0 34 26" aria-hidden="true"><g fill="#b57d4b" stroke="#5f3a18" stroke-width="1.3"><rect x="5" y="1.5" width="27" height="7" rx="3.5"/><rect x="2" y="9.5" width="29" height="7" rx="3.5"/><rect x="6" y="17.5" width="26" height="7" rx="3.5"/></g><g fill="#e4be88" stroke="#5f3a18" stroke-width="1.1"><ellipse cx="6.5" cy="5" rx="2.6" ry="3.5"/><ellipse cx="3.5" cy="13" rx="2.6" ry="3.5"/><ellipse cx="7.5" cy="21" rx="2.6" ry="3.5"/></g><rect x="17" y="0.5" width="3.2" height="25" rx="1.6" fill="#ead39b" stroke="#a88a4a" stroke-width=".8"/></svg><b>Raft</b><em>built from logs, in Go</em></a>
   <nav class="nav">
     <a href="workplace.html" aria-current="page">Workplace</a>
     <a href="course.html">Course</a>
     <a href="under-the-hood.html">Under the hood</a>
-    <a class="gh" href="https://github.com/pBariskan/Raft">GitHub</a>
+    <a class="gh" href="https://github.com/pBariskan/Raft">Source</a>
   </nav>
   <button class="theme-toggle" type="button">dark</button>
 </div></header>
@@ -27,10 +27,10 @@
   <div class="wp-head">
     <div>
       <p class="label">Workplace</p>
-      <h1 class="wp-title">Break the cluster.</h1>
+      <h1 class="wp-title">Break the raft.</h1>
     </div>
     <p class="muted wp-intro">This is the real Go implementation compiled to WebAssembly, not an animation of it.
-      Click a server to crash it, split the network, make messages disappear, send requests, and see whether
+      Every log is a server. Click one to sink it, split the network, make messages disappear, send requests, and see whether
       the safety checks hold.</p>
   </div>
 
@@ -49,6 +49,10 @@
       <figure>
         <div class="figure" id="figure"><div class="loading" id="loading">Loading the engine (about 1 MB)…</div></div>
         <div class="legend">
+          <span><i class="l-flag"></i>leader, flag shows its term</span>
+          <span><i class="l-seg"></i>entry, coloured by term</span>
+          <span><i class="l-unc"></i>not committed yet</span>
+          <span><i class="l-rope"></i>rope: can reach each other</span>
           <span><i class="l-vote"></i>vote request / reply</span>
           <span><i class="l-app"></i>entries (+n)</span>
           <span><i class="l-hb"></i>heartbeat</span>
